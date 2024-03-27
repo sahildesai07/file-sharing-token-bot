@@ -7,13 +7,13 @@ from logging.handlers import RotatingFileHandler
 #Bot token @Botfather
 ultroidxTeam_bot_token = os.environ.get("ultroidxTeam_bot_token", "6976814117:AAEFE6XS95sfM085--KzXrFZ420Ee_VTLNA")
 
-#Your API ID from my.telegram.org
+#Your API ID from my.telegram.org [https://youtu.be/gZQJ-yTMkEo?si=H4NlUUgjsIc5btzH]
 ultroidxTeam_api_id = int(os.environ.get("ultroidxTeam_api_id", "22505271"))
 
-#Your API Hash from my.telegram.org
+#Your API Hash from my.telegram.org [https://youtu.be/gZQJ-yTMkEo?si=H4NlUUgjsIc5btzH]
 API_HASH = os.environ.get("API_HASH", "c89a94fcfda4bc06524d0903977fc81e")
 
-#Your db channel Id
+#Your db channel Id 
 ultroidxTeam_logChannel_id = int(os.environ.get("ultroidxTeam_logChannel_id", "-1002075726565"))
 
 #OWNER ID
@@ -22,9 +22,14 @@ OWNER_ID = int(os.environ.get("OWNER_ID", "6695586027"))
 #Port
 PORT = os.environ.get("PORT", "8080")
 
-#Database 
+#Database [https://youtu.be/qFB0cFqiyOM?si=fVicsCcRSmpuja1A]
+
 ultroidxTeam_DB_URI = "mongodb+srv://Cluster0:Cluster0@cluster0.c07xkuf.mongodb.net/?retryWrites=true&w=majority"
 ultroidxTeam_DB_name = os.environ.get("DATABASE_NAME", "ultroidxTeam")
+
+#Shortner (token system) 
+# check my discription to help by using my refer link of shareus.io
+# 
 
 ultroidxTeam_short_URL = os.environ.get("ultroidxTeam_short_URL", "api.shareus.io")
 ultroidxTeam_short_API = os.environ.get("ultroidxTeam_short_API", "PUIAQBIFrydvLhIzAOeGV8yZppu2")
@@ -36,6 +41,7 @@ ultroidxTeam_tutorial = os.environ.get("ultroidxTeam_tutorial","gojfsi/2")
 #force sub channel id, if you want enable force sub
 FORCE_SUB_CHANNEL = int(os.environ.get("FORCE_SUB_CHANNEL", "-1001982072622"))
 
+# no need to chnage 
 ultroidxTeam_botWorkers = int(os.environ.get("ultroidxTeam_botWorkers", "4"))
 
 #start message
