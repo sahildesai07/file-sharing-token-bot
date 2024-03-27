@@ -32,6 +32,41 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
+
+# Command to get total verified users and non-verified user list
+@Bot.on_message(filters.command('userlist') & filters.user(ultroidxTeam_ADMINS))
+async def user_list_command(bot: Bot, message: Message):
+    users = await full_userbase()
+    total_verified_users = 0
+    verified_users_data = []
+    non_verified_users_data = []
+
+    for user_id in users:
+        verify_status = await db_verify_status(user_id)
+        if verify_status['is_verified']:
+            total_verified_users += 1
+            verified_users_data.append(f"User ID: {user_id}\nVerified Time: {datetime.fromtimestamp(verify_status['verified_time']).strftime('%Y-%m-%d %H:%M:%S')}")
+        else:
+            non_verified_users_data.append(f"User ID: {user_id}")
+
+    response_message = f"Total Verified Users: {total_verified_users}\n\nVerified Users Data:\n\n" + "\n\n".join(verified_users_data)
+    if non_verified_users_data:
+        response_message += "\n\nNon-Verified Users Data:\n\n" + "\n\n".join(non_verified_users_data)
+
+    await message.reply(response_message)
+
+# Command to get bot's ping and uptime
+@Bot.on_message(filters.command('ping'))
+async def ping_command(bot: Bot, message: Message):
+    start_time = datetime.now()
+    sent_message = await message.reply("Pinging...")
+    end_time = datetime.now()
+    latency = (end_time - start_time).microseconds / 1000
+    uptime_seconds = (datetime.now() - bot.uptime).total_seconds()
+    uptime = get_readable_time(int(uptime_seconds))
+
+    await sent_message.edit(f"Pong! Latency: {latency}ms\nBot Uptime: {uptime}")
+
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
