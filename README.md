@@ -1,34 +1,27 @@
-# File Sharing Token Bot
+# 📁 File Sharing Token Bot
 
 ![Python](http://ForTheBadge.com/images/badges/made-with-python.svg) ![Bot](https://yt3.googleusercontent.com/p9g9i5N55WgCn1mFFjl8iut4BOd0O4RRjn7WB_Silj9JmJ42tE-yhdZ0oR_7m-F4kGHT22Br=s176-c-k-c0x00ffffff-no-rj)
 
 <p align="center">
   <a href="https://t.me/ultroid_official">
-    <img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Channel-blue?style=flat-square&logo=telegram" width="130" height="18">
+    <img src="https://img.shields.io/badge/Ultroid%20%F0%9D%95%8F%20Official-Channel-blue?style=for-the-badge&logo=telegram" alt="Ultroid Official Channel">
   </a>
   <a href="https://t.me/ultroidofficial_chat">
-    <img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Group-blue?style=flat-square&logo=telegram" width="130" height="18">
-  </a>
-  <br>
-  <a href="https://github.com/sahildesai07/file-sharing-token-bot/stargazers">
-    <img src="https://img.shields.io/github/stars/sahildesai07/file-sharing-token-bot?style=social">
-  </a>
-  <a href="https://github.com/sahildesai07/file-sharing-token-bot/fork">
-    <img src="https://img.shields.io/github/forks/sahildesai07/file-sharing-token-bot?label=Fork&style=social">
+    <img src="https://img.shields.io/badge/Ultroid%20%F0%9D%95%8F%20Official-Group-blue?style=for-the-badge&logo=telegram" alt="Ultroid Official Group">
   </a>
 </p>
 
 Telegram Bot to store posts and documents accessible via special links.
 
-## Introduction
+## 🚀 Overview
 
-The File Sharing Token Bot is a Telegram bot designed to store posts and documents, accessible through special links. This bot provides a convenient way to manage and share content within Telegram.
+File Sharing Token Bot is a Telegram bot designed to store posts and documents, accessible through special links. This bot provides a convenient way to manage and share content within Telegram.
 
-### Key Features
+### ✨ Features
 
-- Fully customizable.
-- Supports storing multiple posts in one link.
-- Can be deployed on Heroku directly.
+- Store posts and documents.
+- Access content via special links.
+- Easy to deploy and customize.
 
 ## Setup
 
