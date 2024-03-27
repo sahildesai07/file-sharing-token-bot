@@ -11,13 +11,13 @@ ultroidxTeam_bot_token = os.environ.get("ultroidxTeam_bot_token", "6976814117:AA
 ultroidxTeam_api_id = int(os.environ.get("ultroidxTeam_api_id", "22505271"))
 
 #Your API Hash from my.telegram.org [https://youtu.be/gZQJ-yTMkEo?si=H4NlUUgjsIc5btzH]
-API_HASH = os.environ.get("API_HASH", "c89a94fcfda4bc06524d0903977fc81e")
+API_HASH = os.environ.get("API_HASH", "")
 
 #Your db channel Id 
 ultroidxTeam_logChannel_id = int(os.environ.get("ultroidxTeam_logChannel_id", "-1002075726565"))
 
 #OWNER ID
-OWNER_ID = int(os.environ.get("OWNER_ID", "6695586027"))
+OWNER_ID = int(os.environ.get("OWNER_ID", ""))
 
 #Port
 PORT = os.environ.get("PORT", "8080")
