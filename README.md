@@ -1,4 +1,4 @@
-# File-Sharing-Token-Bot
+# File Sharing Bot
 
 <p align="center">
   <a href="https://www.python.org">
@@ -12,7 +12,7 @@
   </a>
   <a href="https://t.me/ultroidofficial_chat">
     &nbsp;<img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Group-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
-  </a>
+  </a>  
   <br>
   <a href="https://github.com/7thofficial/File-Sharing-Bot/stargazers">
     <img src="https://img.shields.io/github/stars/7thofficial/File-Sharing-Bot?style=social">
@@ -22,53 +22,48 @@
   </a>  
 </p>
 
+Telegram Bot to store Posts and Documents and it can be accessed by Special Links.
 
-Telegram Bot to store Posts and Documents and it can Access by Special Links.
-I Guess This Will Be Usefull For Many People.....😇. 
+## Introduction
 
-##
+File Sharing Bot is a Telegram bot designed to store posts and documents, accessible through special links. This bot provides a convenient way to manage and share content within Telegram.
 
-**If you need any more modes in repo or If you find out any bugs, mention in [@ultroidofficail_chat](https://www.telegram.dog/ultroidOFFICIAL_chat)**
+### Key Features
 
-**Make sure to see [contributing.md](https://github.com/7thofficial/File-Sharing-Bot/blob/main/CONTRIBUTING.md) for instructions on contributing to the project!**
+- Fully customizable.
+- Supports storing multiple posts in one link.
+- Can be deployed on Heroku directly.
 
+## Setup
 
+To deploy the bot, follow these steps:
 
-### Features
-- Fully customisable.
-- Customisable welcome & Forcesub messages.
-- More than one Posts in One Link.
-- Can be deployed on heroku directly.
+1. Add the bot to a database channel with all permissions.
+2. Add the bot to the ForceSub channel as an admin with "Invite Users via Link" permission if ForceSub is enabled.
 
-### Setup
+## Installation
 
-- Add the bot to Database Channel with all permission
-- Add bot to ForceSub channel as Admin with Invite Users via Link Permission if you enabled ForceSub 
+### Deploy on Heroku
 
-##
-### Installation
-#### Deploy on Heroku
-**BEFORE YOU DEPLOY ON HEROKU, YOU SHOULD FORK THE REPO AND CHANGE ITS NAME TO ANYTHING ELSE**<br>
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)</br>
-<a href="https://www.youtube.com/watch?v=BeNBEYc-q7Y">
-  <img src="https://img.shields.io/badge/How%20to-Deploy-red?logo=youtube" width="147">
-</a><br>
-**Check This Tutorial Video on YouTube for any Help**<br>
-**Thanks to [blank](https://t.me/ultroidxTeam) and his [ultroidofficial](https://t.me/ultroid_official) for this Video**
+Click the button below to deploy the bot on Heroku:
 
-#### Deploy on Railway
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+For a detailed deployment guide, watch [this tutorial video](https://www.youtube.com/watch?v=BeNBEYc-q7Y).
+
+### Deploy on Railway
+
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/1jKLr4)
 
-#### Deploy on Koyeb
+### Deploy on Koyeb
 
-The fastest way to deploy the application is to click the **Deploy to Koyeb** button below.
-
+Click the button below to deploy the bot on Koyeb:
 
 [![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/7thofficial/File-Sharing-Bot&branch=koyeb&name=filesharingbot)
 
+### Deploy on Your VPS
 
-#### Deploy in your VPS
-````bash
+```bash
 git clone https://github.com/7thofficial/File-Sharing-Bot
 cd File-Sharing-Bot
 pip3 install -r requirements.txt
