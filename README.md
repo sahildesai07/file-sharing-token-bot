@@ -62,7 +62,7 @@ pip3 install -r requirements.txt
 python3 main.py
 ````
 
-### Admin Commands
+🔧 Admin Commands
 
 ```
 start - start the bot or get posts
@@ -78,7 +78,7 @@ broadcast - broadcast any messages to bot users
 stats - checking your bot uptime
 ```
 
-### Variables
+🛠️ Variables
 
 * `API_HASH` Your API Hash from my.telegram.org
 * `ultroidxTeam_api_id ` Your API ID from my.telegram.org
@@ -127,26 +127,24 @@ stats - checking your bot uptime
 * `{uptime}` - Bot Uptime
 
 
-## Support   
+💬 Support
 Join Our [Telegram Group](https://www.telegram.dog/ultroidofficial_chat) For Support/Assistance And Our [Channel](https://www.telegram.dog/ultroid_official) For Updates.   
    
 Report Bugs, Give Feature Requests There..   
 
-### Credits
+🎉 Credits
 
-- Thanks To Dan For His Awsome [Libary](https://github.com/pyrogram/pyrogram)
-- Our Support Group Members
+Thanks to Dan for his awesome library. [Libary](https://github.com/pyrogram/pyrogram)
+Our support group members.
 
-### Licence
-[![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html)  
-
+📝 License
+GNU GPLv3 [![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html) 
 [FILE-SHARING-BOT](https://github.com/7thofficial/File-Sharing-Bot/) is Free Software: You can use, study share and improve it at your
 will. Specifically you can redistribute and/or modify it under the terms of the
 [GNU General Public License](https://www.gnu.org/licenses/gpl.html) as
 published by the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version. 
 
-##
 
    **Star this Repo if you Liked it ⭐⭐⭐**
 
