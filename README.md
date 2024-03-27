@@ -11,7 +11,7 @@
     &nbsp;<img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Channel-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
   </a>
   <a href="https://t.me/ultroidofficial_chat">
-    &nbsp;<img src="https://img.shields.io/badge/Code%20%F0%9D%95%8F%20Botz-Group-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
+    &nbsp;<img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Group-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
   </a>
   <br>
   <a href="https://github.com/7thofficial/File-Sharing-Bot/stargazers">
