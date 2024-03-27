@@ -153,7 +153,13 @@ async def start_command(client: Client, message: Message):
                 ]
                 await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(ultroidxTeam_Timeout)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
 
-@Bot.on_message(filters.private & filters.incoming)
+# Function to delete a message after a specified delay
+async def delete_message(message: Message, delay: int):
+    await asyncio.sleep(delay)
+    await message.delete()
+
+# Command to delete a message after 10 minutes
+@Client.on_message(filters.private & filters.incoming)
 async def delete_after_10min(_, message: Message):
     await delete_message(message, 600)  # 600 seconds = 10 minutes
 
