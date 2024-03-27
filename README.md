@@ -1,32 +1,28 @@
-![image](https://github.com/sahildesai07/file-sharing-token-bot/assets/130888169/c36da972-6133-42c1-a585-7c7d10cbe52d)# File Sharing Token Bot
+# File Sharing Token Bot
+
+![Python](http://ForTheBadge.com/images/badges/made-with-python.svg) ![Bot](https://yt3.googleusercontent.com/p9g9i5N55WgCn1mFFjl8iut4BOd0O4RRjn7WB_Silj9JmJ42tE-yhdZ0oR_7m-F4kGHT22Br=s176-c-k-c0x00ffffff-no-rj)
 
 <p align="center">
-  <a href="https://www.python.org">
-    <img src="http://ForTheBadge.com/images/badges/made-with-python.svg" width ="250">
-  </a>
   <a href="https://t.me/ultroid_official">
-    <img src="https://yt3.googleusercontent.com/p9g9i5N55WgCn1mFFjl8iut4BOd0O4RRjn7WB_Silj9JmJ42tE-yhdZ0oR_7m-F4kGHT22Br=s176-c-k-c0x00ffffff-no-rj" width="250">
-  </a><br>
-  <a href="https://t.me/ultroid_official">
-    &nbsp;<img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Channel-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
+    <img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Channel-blue?style=flat-square&logo=telegram" width="130" height="18">
   </a>
   <a href="https://t.me/ultroidofficial_chat">
-    &nbsp;<img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Group-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
-  </a>  
-  <br>
-  <a href="https://github.com/7thofficial/File-Sharing-Bot/stargazers">
-    <img src="https://img.shields.io/github/stars/7thofficial/File-Sharing-Bot?style=social">
+    <img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Group-blue?style=flat-square&logo=telegram" width="130" height="18">
   </a>
-  <a href="https://github.com/7thofficial/File-Sharing-Bot/fork">
-    <img src="https://img.shields.io/github/forks/7thofficial/File-Sharing-Bot?label=Fork&style=social">
-  </a>  
+  <br>
+  <a href="https://github.com/sahildesai07/file-sharing-token-bot/stargazers">
+    <img src="https://img.shields.io/github/stars/sahildesai07/file-sharing-token-bot?style=social">
+  </a>
+  <a href="https://github.com/sahildesai07/file-sharing-token-bot/fork">
+    <img src="https://img.shields.io/github/forks/sahildesai07/file-sharing-token-bot?label=Fork&style=social">
+  </a>
 </p>
 
-Telegram Bot to store Posts and Documents and it can be accessed by Special Links.
+Telegram Bot to store posts and documents accessible via special links.
 
 ## Introduction
 
-File Sharing Bot is a Telegram bot designed to store posts and documents, accessible through special links. This bot provides a convenient way to manage and share content within Telegram.
+The File Sharing Token Bot is a Telegram bot designed to store posts and documents, accessible through special links. This bot provides a convenient way to manage and share content within Telegram.
 
 ### Key Features
 
@@ -59,13 +55,13 @@ For a detailed deployment guide, watch [this tutorial video](https://www.youtube
 
 Click the button below to deploy the bot on Koyeb:
 
-[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/7thofficial/File-Sharing-Bot&branch=koyeb&name=filesharingbot)
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/sahildesai07/file-sharing-token-bot&branch=main&name=file-sharing-bot)
 
 ### Deploy on Your VPS
 
 ```bash
-git clone https://github.com/7thofficial/File-Sharing-Bot
-cd File-Sharing-Bot
+git clone https://github.com/sahildesai07/file-sharing-token-bot
+cd file-sharing-token-bot
 pip3 install -r requirements.txt
 # <Create config.py appropriately>
 python3 main.py
