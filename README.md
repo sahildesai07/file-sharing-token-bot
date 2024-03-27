@@ -1,11 +1,11 @@
-# File Sharing Token Bot
+![image](https://github.com/sahildesai07/file-sharing-token-bot/assets/130888169/c36da972-6133-42c1-a585-7c7d10cbe52d)# File Sharing Token Bot
 
 <p align="center">
   <a href="https://www.python.org">
     <img src="http://ForTheBadge.com/images/badges/made-with-python.svg" width ="250">
   </a>
   <a href="https://t.me/ultroid_official">
-    <img src="https://github.com/7thofficial/PyrogramGenStr/blob/main/resources/madebycodex-badge.svg" width="250">
+    <img src="https://yt3.googleusercontent.com/p9g9i5N55WgCn1mFFjl8iut4BOd0O4RRjn7WB_Silj9JmJ42tE-yhdZ0oR_7m-F4kGHT22Br=s176-c-k-c0x00ffffff-no-rj" width="250">
   </a><br>
   <a href="https://t.me/ultroid_official">
     &nbsp;<img src="https://img.shields.io/badge/ultroid%20%F0%9D%95%8F%20official-Channel-blue?style=flat-square&logo=telegram" width="130" height="18">&nbsp;
