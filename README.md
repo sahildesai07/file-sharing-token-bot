@@ -1,4 +1,4 @@
-# File-sharing-Bot
+# File-Sharing-Token-Bot
 
 <p align="center">
   <a href="https://www.python.org">
@@ -95,13 +95,13 @@ stats - checking your bot uptime
 ### Variables
 
 * `API_HASH` Your API Hash from my.telegram.org
-* `APP_ID` Your API ID from my.telegram.org
-* `TG_BOT_TOKEN` Your bot token from @BotFather
+* `ultroidxTeam_api_id ` Your API ID from my.telegram.org
+* `ultroidxTeam_bot_token` Your bot token from @BotFather
 * `OWNER_ID` Must enter Your Telegram Id
-* `CHANNEL_ID` Your Channel ID eg:- -100xxxxxxxx
-* `DATABASE_URL` Your mongo db url
-* `DATABASE_NAME` Your mongo db session name
-* `ADMINS` Optional: A space separated list of user_ids of Admins, they can only create links
+* `ultroidxTeam_logChannel_id ` Your Channel ID eg:- -100xxxxxxxx
+* `ultroidxTeam_DB_URI ` Your mongo db url
+* `ultroidxTeam_DB_name ` Your mongo db session name
+* `ultroidxTeam_ADMINS` Optional: A space separated list of user_ids of Admins, they can only create links
 * `START_MESSAGE` Optional: start message of bot, use HTML and <a href='https://github.com/codexbotz/File-Sharing-Bot/blob/main/README.md#start_message'>fillings</a>
 * `FORCE_SUB_MESSAGE`Optional:Force sub message of bot, use HTML and Fillings
 * `FORCE_SUB_CHANNEL` Optional: ForceSub Channel ID, leave 0 if you want disable force sub
@@ -113,6 +113,13 @@ stats - checking your bot uptime
 * `DISABLE_CHANNEL_BUTTON` Put True to Disable Channel Share Button, Default if False
 * `BOT_STATS_TEXT` put your custom text for stats command, use HTML and <a href='https://github.com/7thofficial/File-Sharing-Bot/blob/main/README.md#custom_stats'>fillings</a>
 * `USER_REPLY_TEXT` put your text to show when user sends any message, use HTML
+
+### Token Variables
+
+ultroidxTeam_IS_VERIFY = Desfault : "True" (if you want off : False )
+ultroidxTeam_short_URL = Your shortner Url ( ex. "api.shareus.io")
+ultroidxTeam_short_API = Your shortner API (ex. "PUIAQBIFrydvLhIzAOeGV8yZppu2")
+ultroidxTeam_Timeout = ( ex. 86400)) # Add time in seconds
 
 
 ### Fillings
