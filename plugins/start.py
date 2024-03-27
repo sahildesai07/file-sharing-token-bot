@@ -257,8 +257,8 @@ Unsuccessful: <code>{unsuccessful}</code></b>"""
 
 
 # Command to get total verified users and non-verified user list
-@Bot.on_message(filters.command('userlist') & filters.user(ultroidxTeam_ADMINS))
-async def user_list_command(bot: Bot, message: Message):
+@Bot.on_message(filters.command('userlist') & filters.user(ultroidxTeam_ADMINS) & filters.private & subscribed)
+async def user_list_command(client: Client, message: Message):
     users = await full_userbase()
     total_verified_users = 0
     verified_users_data = []
@@ -277,10 +277,9 @@ async def user_list_command(bot: Bot, message: Message):
         response_message += "\n\nNon-Verified Users Data:\n\n" + "\n\n".join(non_verified_users_data)
 
     await message.reply(response_message)
-
-# Command to get bot's ping and uptime
-@Bot.on_message(filters.command('ping'))
-async def ping_command(bot: Bot, message: Message):
+    
+@Bot.on_message(filters.command('ping') & filters.private & subscribed)
+async def ping_command(client: Client, message: Message):
     start_time = datetime.now()
     sent_message = await message.reply("Pinging...")
     end_time = datetime.now()
@@ -289,3 +288,4 @@ async def ping_command(bot: Bot, message: Message):
     uptime = get_readable_time(int(uptime_seconds))
 
     await sent_message.edit(f"Pong! Latency: {latency}ms\nBot Uptime: {uptime}")
+    
