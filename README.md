@@ -40,7 +40,7 @@ Click the button below to deploy the bot on Heroku:
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-For a detailed deployment guide, watch [this tutorial video](https://www.youtube.com/watch?v=BeNBEYc-q7Y).
+For a detailed deployment guide, watch [this tutorial video](https://youtu.be/7jBbBL9t9jI?si=j52MwTn41TXsc76l).
 
 ### Deploy on Railway
 
