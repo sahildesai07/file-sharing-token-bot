@@ -102,7 +102,7 @@ stats - checking your bot uptime
 
 ### Token Variables
 
-* `ultroidxTeam_IS_VERIFY` = Desfault : "True" (if you want off : False )
+* `ultroidxTeam_IS_VERIFY` = Default : "True" (if you want off : False )
 * `ultroidxTeam_short_URL` = Your shortner Url ( ex. "api.shareus.io")
 * `ultroidxTeam_short_API` = Your shortner API (ex. "PUIAQBIFrydvLhIzAOeGV8yZppu2")
 * `ultroidxTeam_Timeout` = ( ex. 86400)) # Add time in seconds
