@@ -127,7 +127,7 @@ async def start_command(client: Client, message: Message):
                 [
                     [
                         InlineKeyboardButton("😊 About Me", callback_data="about"),
-                        InlineKeyboardButton("😊 About Me", callback_data="close")
+                        InlineKeyboardButton("💔 close", callback_data="close")
                        # InlineKeyboardButton("🎥 YouTube", url="https://youtube.com/@ultroidofficial")
                     ]
                 ]
