@@ -128,7 +128,7 @@ async def start_command(client: Client, message: Message):
                     [
                         InlineKeyboardButton("😊 About Me", callback_data="about"),
                         InlineKeyboardButton("💔 close", callback_data="close")
-                       # InlineKeyboardButton("🎥 YouTube", url="https://youtube.com/@ultroidofficial")
+                      # InlineKeyboardButton("🎥 YouTube", url="https://youtube.com/@ultroidofficial")
                     ]
                 ]
             )
@@ -158,7 +158,7 @@ async def start_command(client: Client, message: Message):
                     [InlineKeyboardButton("Click here", url=link)],
                     [InlineKeyboardButton('How to use the bot', url=full_tut_url)]
                 ]
-                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: <b> {get_exp_time(ultroidxTeam_Timeout)} </b> \n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(ultroidxTeam_Timeout)} \n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
                 await delete_message(message, 600)  # 600 seconds = 10 minutes
 
 
