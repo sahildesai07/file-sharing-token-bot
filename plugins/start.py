@@ -1,4 +1,4 @@
-# ultroid_official (TG)
+# https://www.youtube.com/channel/UC7tAa4hho37iNv731_6RIOg
 import asyncio
 import base64
 import logging
@@ -15,31 +15,27 @@ from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 
 from bot import Bot
 from config import (
-    ultroidxTeam_ADMINS,
+    ADMINS,
     FORCE_MSG,
     START_MSG,
     CUSTOM_CAPTION,
-    ultroidxTeam_IS_VERIFY,
-    ultroidxTeam_Timeout,
-    ultroidxTeam_short_API,
-    ultroidxTeam_short_URL,
+    IS_VERIFY,
+    VERIFY_EXPIRE,
+    SHORTLINK_API,
+    SHORTLINK_URL,
     DISABLE_CHANNEL_BUTTON,
     PROTECT_CONTENT,
-    ultroidxTeam_tutorial,
+    TUT_VID,
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
-async def delete_message(message: Message, duration: int):
-    await asyncio.sleep(duration)
-    await message.delete()
-
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
-    owner_id = ultroidxTeam_ADMINS  # Fetch the owner's ID from config
+    owner_id = ADMINS  # Fetch the owner's ID from config
 
     # Check if the user is the owner
     if id == owner_id:
@@ -55,7 +51,7 @@ async def start_command(client: Client, message: Message):
                 pass
 
         verify_status = await get_verify_status(id)
-        if verify_status['is_verified'] and ultroidxTeam_Timeout < (time.time() - verify_status['verified_time']):
+        if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
             await update_verify_status(id, is_verified=False)
 
         if "verify_" in message.text:
@@ -123,16 +119,11 @@ async def start_command(client: Client, message: Message):
                 except:
                     pass
 
+        elif verify_status['is_verified']:
             reply_markup = InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton("😊 About Me", callback_data="about"),
-                        InlineKeyboardButton("💔 close", callback_data="close")
-                      # InlineKeyboardButton("🎥 YouTube", url="https://youtube.com/@ultroidofficial")
-                    ]
-                ]
+                [[InlineKeyboardButton("ℹ️ About Me", callback_data="about"),
+                  InlineKeyboardButton("🎥 YouTube", url="https://www.youtube.com/channel/UC7tAa4hho37iNv731_6RIOg")]]
             )
-                
             await message.reply_text(
                 text=START_MSG.format(
                     first=message.from_user.first_name,
@@ -148,18 +139,19 @@ async def start_command(client: Client, message: Message):
 
         else:
             verify_status = await get_verify_status(id)
-            if ultroidxTeam_IS_VERIFY and not verify_status['is_verified']:
+            if IS_VERIFY and not verify_status['is_verified']:
                 short_url = f"api.shareus.io"
-                full_tut_url = f"https://t.me/Ultroid_Official/18"
+                full_tut_url = f"https://t.me/neprosz/3"
                 token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
                 await update_verify_status(id, verify_token=token, link="")
-                link = await get_shortlink(ultroidxTeam_short_URL, ultroidxTeam_short_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
+                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
                 btn = [
                     [InlineKeyboardButton("Click here", url=link)],
                     [InlineKeyboardButton('How to use the bot', url=full_tut_url)]
                 ]
-                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(ultroidxTeam_Timeout)} \n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
-                await delete_message(message, 600)  # 600 seconds = 10 minutes
+                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+
+# ... (rest of the code remains unchanged))
 
 
     
@@ -208,13 +200,13 @@ async def not_joined(client: Client, message: Message):
         disable_web_page_preview = True
     )
 
-@Bot.on_message(filters.command('users') & filters.private & filters.user(ultroidxTeam_ADMINS))
+@Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
 
-@Bot.on_message(filters.private & filters.command('broadcast') & filters.user(ultroidxTeam_ADMINS))
+@Bot.on_message(filters.private & filters.command('broadcast') & filters.user(ADMINS))
 async def send_text(client: Bot, message: Message):
     if message.reply_to_message:
         query = await full_userbase()
