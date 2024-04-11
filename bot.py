@@ -9,19 +9,19 @@ from pyrogram.enums import ParseMode
 import sys
 from datetime import datetime
 
-from config import API_HASH, ultroidxTeam_api_id, LOGGER, ultroidxTeam_bot_token, ultroidxTeam_botWorkers, FORCE_SUB_CHANNEL, ultroidxTeam_logChannel_id, PORT
+from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
 
 class Bot(Client):
     def __init__(self):
         super().__init__(
             name="Bot",
             api_hash=API_HASH,
-            api_id=ultroidxTeam_api_id,
+            api_id=APP_ID,
             plugins={
                 "root": "plugins"
             },
-            workers=ultroidxTeam_botWorkers,
-            bot_token=ultroidxTeam_bot_token
+            workers=TG_BOT_WORKERS,
+            bot_token=TG_BOT_TOKEN
         )
         self.LOGGER = LOGGER
 
@@ -41,24 +41,24 @@ class Bot(Client):
                 self.LOGGER(__name__).warning(a)
                 self.LOGGER(__name__).warning("Bot can't Export Invite link from Force Sub Channel!")
                 self.LOGGER(__name__).warning(f"Please Double check the FORCE_SUB_CHANNEL value and Make sure Bot is Admin in channel with Invite Users via Link Permission, Current Force Sub Channel Value: {FORCE_SUB_CHANNEL}")
-                self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroid_official for support")
+                self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroidofficial_chat for support")
                 sys.exit()
         try:
-            db_channel = await self.get_chat(ultroidxTeam_logChannel_id)
+            db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
             test = await self.send_message(chat_id = db_channel.id, text = "Test Message")
             await test.delete()
         except Exception as e:
             self.LOGGER(__name__).warning(e)
-            self.LOGGER(__name__).warning(f"Make Sure bot is Admin in DB Channel, and Double check the ultroidxTeam_logChannel_id Value, Current Value {ultroidxTeam_logChannel_id}")
-            self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroid_official for support")
+            self.LOGGER(__name__).warning(f"Make Sure bot is Admin in DB Channel, and Double check the CHANNEL_ID Value, Current Value {CHANNEL_ID}")
+            self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/susanta_bhandarii for support")
             sys.exit()
 
         self.set_parse_mode(ParseMode.HTML)
-        self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/ultroid_official")
+        self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/waspros")
         self.LOGGER(__name__).info(f""" \n\n       
 (っ◔◡◔)っ ♥ ULTROIDOFFICIAL ♥
-░╚════╝░░╚════╝░╚═════╝░╚══════╝
+░╚════╝░░╚════╝░╚═════╝░╚════╝░
                                           """)
         self.username = usr_bot_me.username
         #web-response
@@ -69,4 +69,5 @@ class Bot(Client):
 
     async def stop(self, *args):
         await super().stop()
-        self.LOGGER(__name__).info("Bot stopped.")
+        self.LOGGER(__name__).info("Bot stopped.e(ultroidxTeam).")
+
