@@ -1,11 +1,13 @@
 #ultroidxTeam (admin - TG )
 #import logging
+#(©)Codexbotz
+
 import base64
 import re
 import asyncio
 from pyrogram import filters
 from pyrogram.enums import ChatMemberStatus
-from config import FORCE_SUB_CHANNEL, ultroidxTeam_ADMINS
+from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
 from shortzy import Shortzy
@@ -21,7 +23,7 @@ async def is_subscribed(filter, client, update):
     if not FORCE_SUB_CHANNEL:
         return True
     user_id = update.from_user.id
-    if user_id in ultroidxTeam_ADMINS:
+    if user_id in ADMINS:
         return True
     try:
         member = await client.get_chat_member(chat_id = FORCE_SUB_CHANNEL, user_id = user_id)
@@ -81,13 +83,13 @@ async def get_message_id(client, message):
         matches = re.match(pattern,message.text)
         if not matches:
             return 0
-        ultroidxTeam_logChannel_id = matches.group(1)
+        channel_id = matches.group(1)
         msg_id = int(matches.group(2))
-        if ultroidxTeam_logChannel_id.isdigit():
-            if f"-100{ultroidxTeam_logChannel_id}" == str(client.db_channel.id):
+        if channel_id.isdigit():
+            if f"-100{channel_id}" == str(client.db_channel.id):
                 return msg_id
         else:
-            if ultroidxTeam_logChannel_id == client.db_channel.username:
+            if channel_id == client.db_channel.username:
                 return msg_id
     else:
         return 0
