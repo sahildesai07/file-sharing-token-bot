@@ -1,9 +1,9 @@
 
 import motor.motor_asyncio
-from config import ultroidxTeam_DB_URI, ultroidxTeam_DB_name
+from config import DB_URI, DB_NAME
 
-dbclient = motor.motor_asyncio.AsyncIOMotorClient(ultroidxTeam_DB_URI)
-database = dbclient[ultroidxTeam_DB_name]
+dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
+database = dbclient[DB_NAME]
 
 user_data = database['users']
 
