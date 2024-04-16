@@ -102,7 +102,9 @@ async def start_command(client: Client, message: Message):
                 await message.reply_text("Something went wrong..!")
                 return
             await temp_msg.delete()
-
+            
+            snt_msgs = []
+            
             for msg in messages:
                 if bool(CUSTOM_CAPTION) & bool(msg.document):
                     caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
@@ -115,15 +117,18 @@ async def start_command(client: Client, message: Message):
                     reply_markup = None
 
                 try:
-                    await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                     await asyncio.sleep(0.5)
+                    snt_msgs.append(snt_msg)
                 except FloodWait as e:
                     await asyncio.sleep(e.x)
-                    await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    snt_msgs.append(snt_msg)
                 except:
                     pass
-            SD = await message.reply_text("Baka! Files will be deleted After 20min (1200 seconds). Save them to the Saved Message now!")
-            await asyncio.sleep(SECONDS)
+
+            SD = await message.reply_text("Baka! Files will be deleted After 600 seconds. Save them to the Saved Message now!")
+            await asyncio.sleep(600)
 
             for snt_msg in snt_msgs:
                 try:
@@ -131,12 +136,11 @@ async def start_command(client: Client, message: Message):
                     await SD.delete()
                 except:
                     pass
-            return     
 
         elif verify_status['is_verified']:
             reply_markup = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("ℹ️ About Me", callback_data="about"),
-                  InlineKeyboardButton("🎥 YouTube", url="https://www.youtube.com/channel/UC7tAa4hho37iNv731_6RIOg")]]
+                [[InlineKeyboardButton("About Me", callback_data="about"),
+                  InlineKeyboardButton("Close", callback_data="close")]]
             )
             await message.reply_text(
                 text=START_MSG.format(
@@ -155,17 +159,15 @@ async def start_command(client: Client, message: Message):
             verify_status = await get_verify_status(id)
             if IS_VERIFY and not verify_status['is_verified']:
                 short_url = f"api.shareus.io"
-                full_tut_url = f"https://t.me/ultroid_official/18"
+                TUT_VID = f"https://t.me/ultroid_official/18"
                 token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
                 await update_verify_status(id, verify_token=token, link="")
                 link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
                 btn = [
                     [InlineKeyboardButton("Click here", url=link)],
-                    [InlineKeyboardButton('How to use the bot', url=full_tut_url)]
+                    [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
                 ]
                 await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
-
-# ... (rest of the code remains unchanged))
 
 
 
