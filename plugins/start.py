@@ -127,8 +127,8 @@ async def start_command(client: Client, message: Message):
                 except:
                     pass
 
-            SD = await message.reply_text("Baka! Files will be deleted After 600 seconds. Save them to the Saved Message now!")
-            await asyncio.sleep(600)
+            SD = await message.reply_text("NEVER DELETE FROM HERE")
+            await asyncio.sleep()
 
             for snt_msg in snt_msgs:
                 try:
@@ -158,8 +158,8 @@ async def start_command(client: Client, message: Message):
         else:
             verify_status = await get_verify_status(id)
             if IS_VERIFY and not verify_status['is_verified']:
-                short_url = f"api.shareus.io"
-                TUT_VID = f"https://t.me/ultroid_official/18"
+                short_url = f""
+                TUT_VID = f"https://t.me/OPMASTERLECTURE"
                 token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
                 await update_verify_status(id, verify_token=token, link="")
                 link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
@@ -167,7 +167,7 @@ async def start_command(client: Client, message: Message):
                     [InlineKeyboardButton("Click here", url=link)],
                     [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
                 ]
-                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+                await message.reply(f"Your DAILY token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an DAILY token. You , you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
 
 
 
