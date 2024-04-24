@@ -23,7 +23,7 @@ PORT = os.environ.get("PORT", "8080")
 
 #Database 
 #Database [https://youtu.be/qFB0cFqiyOM?si=fVicsCcRSmpuja1A]
-DB_URI = "mongodb+srv://Cluster0:Cluster0@cluster0.c07xkuf.mongodb.net/?retryWrites=true&w=majority"
+DB_URI = ""
 DB_NAME = os.environ.get("DATABASE_NAME", "ultroidxTeam")
 
 #Shortner (token system) 
