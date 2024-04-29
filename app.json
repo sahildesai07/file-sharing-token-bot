@@ -38,7 +38,7 @@
       "description": "Enter yourSHORTLINK_API , add yr shortner api ",
       "value": "710b7ed8fdc5f89e9036000cc10121921e7732f1"
     },
-    "IS_VERIFY ":{
+    "IS_VERIFY":{
       "description": "True= (on)or False = (off) , value = True/False ",
       "value": "True"
     },
