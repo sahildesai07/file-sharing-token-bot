@@ -2,9 +2,10 @@
 from bot import Bot
 from pyrogram.types import Message
 from pyrogram import filters
-from config import ADMINS, BOT_STATS_TEXT, USER_REPLY_TEXT
+from config import ADMINS, BOT_STATS_TEXT, USER_REPLY_TEXT,ADMINS
 from datetime import datetime
 from helper_func import get_readable_time
+from database.database import add_user, present_user
 
 @Bot.on_message(filters.command('stats') & filters.user(ADMINS))
 async def stats(bot: Bot, message: Message):
