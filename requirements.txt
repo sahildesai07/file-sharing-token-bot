@@ -2,7 +2,7 @@
 # --- For-Bot-Working --------- #
 pyrogram
 TgCrypto
-pyrofork
+pyromod
 # --- For-Database ------------ #
 pymongo
 motor
