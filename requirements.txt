@@ -1,8 +1,8 @@
-git+https://github.com/youesky/pyrogram
+#git+https://github.com/youesky/pyrogram
 # --- For-Bot-Working --------- #
 pyrogram
 TgCrypto
-#pyromod
+pyrofork
 # --- For-Database ------------ #
 pymongo
 motor
