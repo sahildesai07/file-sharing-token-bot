@@ -3,20 +3,20 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 #Bot token @Botfather
-TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7363689539:AAFQASOW4M3KktW0wjYY-BhscgXP950zOME")
+TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "")
 
 #Your API ID & API HASH from my.telegram.org [https://youtu.be/gZQJ-yTMkEo?si=H4NlUUgjsIc5btzH]
 #Your API ID from my.telegram.org
-APP_ID = int(os.environ.get("APP_ID", "11450835"))
+APP_ID = int(os.environ.get("APP_ID", "23929647"))
 
 #Your API Hash from my.telegram.org
-API_HASH = os.environ.get("API_HASH", "0fadb61feae6ccf016932823bbf1565c")
+API_HASH = os.environ.get("API_HASH", "b9afa697042d998a758e407b84c86daf")
 
 #Your db channel Id
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-1002002777981"))
+CHANNEL_ID = int(os.environ.get("CHANNEL_ID", "-957766336"))
 
 #OWNER ID
-OWNER_ID = int(os.environ.get("OWNER_ID", "1480923991"))
+OWNER_ID = int(os.environ.get("OWNER_ID", "2016390875"))
 
 #Port
 PORT = os.environ.get("PORT", "8585")
@@ -31,13 +31,13 @@ DB_NAME = os.environ.get("DATABASE_NAME", "Cluster0")
 # 
 
 SHORTLINK_URL = os.environ.get("SHORTLINK_URL", "publicearn.com")
-SHORTLINK_API = os.environ.get("SHORTLINK_API", "ce6146378959c8fdf69d72e3818fe0a9197b1ba7")
+SHORTLINK_API = os.environ.get("SHORTLINK_API", "3a316a64da231058d60e832717d6c32da304d12d")
 VERIFY_EXPIRE = int(os.environ.get('VERIFY_EXPIRE', 86400)) # Add time in seconds
 IS_VERIFY = os.environ.get("IS_VERIFY", "True")
-TUT_VID = os.environ.get("TUT_VID", "https://t.me/Media_Adholokam/4") # shareus ka tut_vid he 
+TUT_VID = os.environ.get("TUT_VID", "https://t.me/+PZfHvzjSiZc4OGE1") # shareus ka tut_vid he 
 
 #force sub channel id, if you want enable force sub
-FORCE_SUB_CHANNEL = int(os.environ.get("FORCE_SUB_CHANNEL", "-1002216492318"))
+FORCE_SUB_CHANNEL = int(os.environ.get("FORCE_SUB_CHANNEL", "-1002232924690"))
 
 TG_BOT_WORKERS = int(os.environ.get("TG_BOT_WORKERS", "4"))
 
