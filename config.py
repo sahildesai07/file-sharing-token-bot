@@ -37,7 +37,7 @@ DB_URI = environ.get("DB_URI", "")
 DB_NAME = environ.get("DB_NAME", "phdlust")
 
 # Auto Delete Information
-AUTO_DELETE_MODE = bool(environ.get('AUTO_DELETE_MODE', True)) # Set True or False
+AUTO_DELETE_MODE = bool(environ.get('AUTO_DELETE_MODE', False )) # Set True or False
 
 # If Auto Delete Mode Is True Then Fill All Required Variable, If False Then Don't Fill.
 AUTO_DELETE = int(environ.get("AUTO_DELETE", "30")) # Time in Minutes
@@ -79,6 +79,16 @@ if 'DYNO' in environ:
 else:
     ON_HEROKU = False
 URL = environ.get("URL", "https://testofvjfilter-1fa60b1b8498.herokuapp.com/")
+
+#credit change
+update = environ.get("update", "ultroid_official")
+support = environ.get("support", "ultroid0fficial_chat")
+owner = environ.get("owner", "jatin_24x")
+
+
+
+
+
 
 
 
