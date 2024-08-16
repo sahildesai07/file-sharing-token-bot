@@ -5,7 +5,7 @@
 import re
 from pyrogram import filters, Client, enums
 from pyrogram.errors.exceptions.bad_request_400 import ChannelInvalid, UsernameInvalid, UsernameNotModified
-from config import ADMINS, LOG_CHANNEL, PUBLIC_FILE_STORE, WEBSITE_URL, WEBSITE_URL_MODE
+from config import ADMINS, LOG_CHANNEL, PUBLIC_FILE_STORE, WEBSITE_URL, WEBSITE_URL_MODE , BOT_USERNAME
 from plugins.database import unpack_new_file_id
 from plugins.users_api import get_user, get_short_link
 import re
@@ -30,7 +30,7 @@ async def allowed(_, __, message):
 
 @Client.on_message((filters.document | filters.video | filters.audio) & filters.private & filters.create(allowed))
 async def incoming_gen_link(bot, message):
-    username = (await bot.get_me()).username
+    #username = (await bot.get_me()).username
     file_type = message.media
     file_id, ref = unpack_new_file_id((getattr(message, file_type.value)).file_id)
     string = 'file_'
@@ -41,12 +41,12 @@ async def incoming_gen_link(bot, message):
     if WEBSITE_URL_MODE == True:
         share_link = f"{WEBSITE_URL}?PhdLust={outstr}"
     else:
-        share_link = f"https://t.me/{username}?start={outstr}"
+        share_link = f"https://t.me/{BOT_USERNAME}?start={outstr}"
     if user["base_site"] and user["shortener_api"] != None:
         short_link = await get_short_link(user, share_link)
         await message.reply(f"<b>⭕ ʜᴇʀᴇ ɪs ʏᴏᴜʀ ʟɪɴᴋ:\n\n🖇️ sʜᴏʀᴛ ʟɪɴᴋ :- {short_link}</b>")
     else:
-        await message.reply(f"<b>⭕ ʜᴇʀᴇ ɪs ʏᴏᴜʀ ʟɪɴᴋ:\n\n🔗 ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ :- {share_link}</b>")
+        await message.reply(f"<b>⭕ ʜᴇʀᴇ ɪs ʏᴏᴜʀ ʟɪɴᴋ:\n\n🔗 ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ :- `{share_link}`</b>")
         
 
 @Client.on_message(filters.command(['link', 'plink']) & filters.create(allowed))
