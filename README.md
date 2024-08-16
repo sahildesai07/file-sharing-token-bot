@@ -113,7 +113,7 @@ Copyright ©️ [PhdLust](https://telegram.me/UltroidxTeam)
 
 ### Copyright ©️ [PhdLust](https://telegram.me/UltroidxTeam)
 
-<b>Selling This Repo Or Code Of This Repo For Money Is Strictly Prohibited 🚫</b>
-<b>This code is from TechVJ , special thx to TechVJ </b>
+<b>Selling This Repo Or Code Of This Repo For Money Is Strictly Prohibited 🚫</b> <br>
+<b>This code is from TechVJ , Special thx to TechVJ </b> <br>
 <b> Open source </b>
 
