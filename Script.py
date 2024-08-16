@@ -1,7 +1,7 @@
 #credit change
-UPDATE = "@ultroid_official"
-SUPPORT = "@ultroid0fficial_chat"
-OWNER_ID = 2016390875
+UPDATE1 = "@ultroid_official"
+SUPPORT1 = "@ultroid0fficial_chat"
+OWNER_ID1 = 2016390875
 
 class script(object):
     START_TXT = """<b>Hᴇʟʟᴏ {},\nᴍʏ ɴᴀᴍᴇ {},\n 【ɪ ᴀᴍ ᴜxʙ ʙᴏᴛ】\n+ ᴘᴏᴡᴇʀꜰᴜʟ ꜰɪʟᴇ ꜱᴛᴏʀᴇ ʙᴏᴛ \n+ ᴄʟᴏɴᴇ ғᴇᴀᴛᴜʀᴇ \n+ sᴛʀᴇᴀᴍ / ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ ғᴇᴀᴛᴜʀᴇ \n+ ᴄᴜꜱᴛᴏᴍ ᴜʀʟ ꜱʜᴏʀᴛɴᴇʀ ꜱᴜᴘᴘᴏʀᴛ \n+ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ sᴜᴘᴘᴏʀᴛ  \n+ ʙᴇꜱᴛ ᴜɪ ᴘᴇʀꜰᴏʀᴍᴀɴᴄᴇ \n</b>"""
@@ -24,13 +24,13 @@ If You Want To Remove Api Then Copy This And Send To Bot - `/api None`"""
 
 
 
-    CLONE_START_TXT = """<b>Hᴇʟʟᴏ {},ᴍʏ ɴᴀᴍᴇ {},【ɪ ᴀᴍ ʟᴀᴛᴇꜱᴛ ᴀᴅᴠᴀɴᴄᴇᴅ】ᴀɴᴅ ᴘᴏᴡᴇʀꜰᴜʟ ꜰɪʟᴇ ꜱᴛᴏʀᴇ ʙᴏᴛ +├ᴄᴜꜱᴛᴏᴍ ᴜʀʟ ꜱʜᴏʀᴛɴᴇʀ ꜱᴜᴘᴘᴏʀᴛ┤+  ᢵᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ sᴜᴘᴘᴏʀᴛ ᢴ ᢾᴀɴᴅ ʙᴇꜱᴛ ᴜɪ ᴘᴇʀꜰᴏʀᴍᴀɴᴄᴇᢿ
+    CLONE_START_TXT = """<b>Hᴇʟʟᴏ {},\nᴍʏ ɴᴀᴍᴇ {},\n 【ɪ ᴀᴍ ᴜxʙ ʙᴏᴛ】\n+ ᴘᴏᴡᴇʀꜰᴜʟ ꜰɪʟᴇ ꜱᴛᴏʀᴇ ʙᴏᴛ \n+ ᴄʟᴏɴᴇ ғᴇᴀᴛᴜʀᴇ \n+ sᴛʀᴇᴀᴍ / ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ ғᴇᴀᴛᴜʀᴇ \n+ ᴄᴜꜱᴛᴏᴍ ᴜʀʟ ꜱʜᴏʀᴛɴᴇʀ ꜱᴜᴘᴘᴏʀᴛ \n+ ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ sᴜᴘᴘᴏʀᴛ  \n+ ʙᴇꜱᴛ ᴜɪ ᴘᴇʀꜰᴏʀᴍᴀɴᴄᴇ \n</b>
 
 ɪғ ʏᴏᴜ ᴡᴀɴᴛ ᴛʜɪs ғᴇᴀᴛᴜʀᴇ ᴛʜᴇɴ ᴄʀᴇᴀᴛᴇ ʏᴏᴜʀ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ ғʀᴏᴍ ᴍʏ <a href=https://t.me/ultroid_Official>ᴘᴀʀᴇɴᴛ</a></b>"""
 
 
 
-    ABOUT_TXT = f"<b>○ Creator : <a href='tg://user?id={OWNER_ID}'>This Person</a>\n○ Source Code : <a href='https://youtube.com/@Phdlust'>Click here</a>\n○ Channel : {UPDATE} \n○ Support Group : {SUPPORT}</b>"
+    ABOUT_TXT = f"<b>○ Creator : <a href='tg://user?id={OWNER_ID1}'>This Person</a>\n○ Source Code : <a href='https://youtube.com/@Phdlust'>Click here</a>\n○ Channel : {UPDATE1} \n○ Support Group : {SUPPORT1}</b>"
 
 
     CABOUT_TXT = """<b>ʜɪ ɪ ᴀᴍ ᴘᴇʀᴍᴀɴᴇɴᴛ ғɪʟᴇ sᴛᴏʀᴇ ʙᴏᴛ ᴡɪᴛʜ ᴄʟᴏɴᴇ ғᴇᴀᴛᴜʀᴇ + ᴄᴜsᴛᴏᴍ ᴜʀʟ sʜᴏʀᴛɴᴇʀ ɪᴛ ᴍᴇᴀɴs ᴀɴʏ ᴜsᴇʀ ᴄᴀɴ sᴇᴛ ʜɪs ᴜʀʟ sʜᴏʀᴛɴᴇʀ ᴀɴᴅ + ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ.
