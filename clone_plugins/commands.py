@@ -17,7 +17,7 @@ from config import PICS, CUSTOM_FILE_CAPTION, AUTO_DELETE_TIME, AUTO_DELETE
 import re
 import json
 import base64
-from config import DB_URI as MONGO_URL
+from config import DB_URI as MONGO_URL , YT
 from pymongo import MongoClient
 
 mongo_client = MongoClient(MONGO_URL)
