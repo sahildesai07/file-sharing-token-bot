@@ -1,6 +1,6 @@
-# Don't Remove Credit @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot @Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+# Don't Remove Credit @VJ_Botz
+# Subscribe YouTube Channel For Amazing Bot @PhdLust
+# Ask Doubt on telegram @KingVJ01
 
 import re
 from pyrogram import filters, Client, enums
@@ -14,9 +14,7 @@ import json
 import base64
 import logging
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -28,9 +26,7 @@ async def allowed(_, __, message):
         return True
     return False
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
 
 @Client.on_message((filters.document | filters.video | filters.audio) & filters.private & filters.create(allowed))
 async def incoming_gen_link(bot, message):
@@ -43,7 +39,7 @@ async def incoming_gen_link(bot, message):
     user_id = message.from_user.id
     user = await get_user(user_id)
     if WEBSITE_URL_MODE == True:
-        share_link = f"{WEBSITE_URL}?Phdlust={outstr}"
+        share_link = f"{WEBSITE_URL}?PhdLust={outstr}"
     else:
         share_link = f"https://t.me/{username}?start={outstr}"
     if user["base_site"] and user["shortener_api"] != None:
@@ -65,9 +61,7 @@ async def gen_link_s(bot, message):
     if message.has_protected_content and message.chat.id not in ADMINS:
         return await message.reply("okDa")
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
     
     file_id, ref = unpack_new_file_id((getattr(replied, file_type.value)).file_id)
     string = 'filep_' if message.text.lower().strip() == "/plink" else 'file_'
@@ -76,7 +70,7 @@ async def gen_link_s(bot, message):
     user_id = message.from_user.id
     user = await get_user(user_id)
     if WEBSITE_URL_MODE == True:
-        share_link = f"{WEBSITE_URL}?Phdlust={outstr}"
+        share_link = f"{WEBSITE_URL}?PhdLust={outstr}"
     else:
         share_link = f"https://t.me/{username}?start={outstr}"
     if user["base_site"] and user["shortener_api"] != None:
@@ -86,18 +80,16 @@ async def gen_link_s(bot, message):
         await message.reply(f"<b>⭕ ʜᴇʀᴇ ɪs ʏᴏᴜʀ ʟɪɴᴋ:\n\n🔗 ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ :- {share_link}</b>")
         
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
 
 @Client.on_message(filters.command(['batch', 'pbatch']) & filters.create(allowed))
 async def gen_link_batch(bot, message):
     username = (await bot.get_me()).username
     if " " not in message.text:
-        return await message.reply("Use correct format.\nExample /batch https://t.me/ultroid_Official/10 https://t.me/ultroid_Official/20.")
+        return await message.reply("Use correct format.\nExample /batch https://t.me/ultroid_official/10 https://t.me/ultroid_official/20.")
     links = message.text.strip().split(" ")
     if len(links) != 3:
-        return await message.reply("Use correct format.\nExample /batch https://t.me/ultroid_Official/10 https://t.me/ultroid_Official/20.")
+        return await message.reply("Use correct format.\nExample /batch https://t.me/ultroid_official/10 https://t.me/ultroid_official/20.")
     cmd, first, last = links
     regex = re.compile("(https://)?(t\.me/|telegram\.me/|telegram\.dog/)(c/)?(\d+|[a-zA-Z_0-9]+)/(\d+)$")
     match = regex.match(first)
@@ -108,9 +100,7 @@ async def gen_link_batch(bot, message):
     if f_chat_id.isnumeric():
         f_chat_id = int(("-100" + f_chat_id))
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
     
     match = regex.match(last)
     if not match:
@@ -131,9 +121,7 @@ async def gen_link_batch(bot, message):
     except Exception as e:
         return await message.reply(f'Errors - {e}')
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
     
     sts = await message.reply("**ɢᴇɴᴇʀᴀᴛɪɴɢ ʟɪɴᴋ ғᴏʀ ʏᴏᴜʀ ᴍᴇssᴀɢᴇ**.\n**ᴛʜɪs ᴍᴀʏ ᴛᴀᴋᴇ ᴛɪᴍᴇ ᴅᴇᴘᴇɴᴅɪɴɢ ᴜᴘᴏɴ ɴᴜᴍʙᴇʀ ᴏғ ᴍᴇssᴀɢᴇs**")
 
@@ -141,9 +129,7 @@ async def gen_link_batch(bot, message):
 
     outlist = []
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
 
     # file store without db channel
     og_msg = 0
@@ -170,9 +156,7 @@ async def gen_link_batch(bot, message):
                     "protect": cmd.lower().strip() == "/pbatch",
                 }
 
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
 
                 og_msg +=1
                 outlist.append(file)
@@ -191,7 +175,7 @@ async def gen_link_batch(bot, message):
     user_id = message.from_user.id
     user = await get_user(user_id)
     if WEBSITE_URL_MODE == True:
-        share_link = f"{WEBSITE_URL}?Phdlust=BATCH-{file_id}"
+        share_link = f"{WEBSITE_URL}?PhdLust=BATCH-{file_id}"
     else:
         share_link = f"https://t.me/{username}?start=BATCH-{file_id}"
     if user["base_site"] and user["shortener_api"] != None:
@@ -200,7 +184,5 @@ async def gen_link_batch(bot, message):
     else:
         await sts.edit(f"<b>⭕ ʜᴇʀᴇ ɪs ʏᴏᴜʀ ʟɪɴᴋ:\n\nContains `{og_msg}` files.\n\n🔗 ᴏʀɪɢɪɴᴀʟ ʟɪɴᴋ :- {share_link}</b>")
         
-# Don't Remove Credit Tg - @ultroid_Official
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Phdlust
-# Ask Doubt on telegram @UltroidxTeam
+
 
