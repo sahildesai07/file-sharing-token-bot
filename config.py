@@ -14,7 +14,12 @@ def is_enabled(value, default):
         return False
     else:
         return default
-      
+
+#credit change
+UPDATE = environ.get("UPDATE", "ultroid_official")
+SUPPORT = environ.get("SUPPORT", "ultroid0fficial_chat")
+OWNER = environ.get("OWNER", "jatin_24x")
+
 # Bot Information
 API_ID = int(environ.get("API_ID", ""))
 API_HASH = environ.get("API_HASH", "")
@@ -80,10 +85,7 @@ else:
     ON_HEROKU = False
 URL = environ.get("URL", "https://testofvjfilter-1fa60b1b8498.herokuapp.com/")
 
-#credit change
-UPDATE = environ.get("UPDATE", "ultroid_official")
-SUPPORT = environ.get("SUPPORT", "ultroid0fficial_chat")
-OWNER = environ.get("OWNER", "jatin_24x")
+
 
 
 
