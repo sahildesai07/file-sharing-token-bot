@@ -1,6 +1,3 @@
-
-
-
 import re
 import os
 from os import environ
@@ -14,13 +11,18 @@ def is_enabled(value, default):
         return False
     else:
         return default
-      
+
+UPDATE = environ.get("SUPPORT", "https://t.me/ultroid_official")
+SUPPORT = environ.get("SUPPORT", "https://t.me/ultroid0fficial_chat")
+OWNERID = int(environ.get("OWNERID" ,"2016390875"))
+YT = environ.get("YT", "https://youtube.com/@phdlust")
+
 # Bot Information
 API_ID = int(environ.get("API_ID", "23929647"))
-API_HASH = environ.get("API_HASH", "https://graph.org/file/0db18dde98ea3d0d4df0a.jpg")
+API_HASH = environ.get("API_HASH", "")
 BOT_TOKEN = environ.get("BOT_TOKEN", "")
 
-PICS = (environ.get('PICS', 'https://graph.org/file/ce1723991756e48c35aa1.jpg')).split() # Bot Start Picture
+PICS = (environ.get('PICS', 'https://graph.org/file/0db18dde98ea3d0d4df0a.jpg')).split() # Bot Start Picture
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '').split()]
 BOT_USERNAME = environ.get("BOT_USERNAME", "") # without @
 PORT = environ.get("PORT", "8080")
