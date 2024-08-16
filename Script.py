@@ -1,20 +1,13 @@
-from config import UPDATE , SUPPORT , OWNER
+from config import *
 
 class script(object):
     START_TXT = """<b>Hᴇʟʟᴏ {},ᴍʏ ɴᴀᴍᴇ {},【ɪ ᴀᴍ ʟᴀᴛᴇꜱᴛ ᴀᴅᴠᴀɴᴄᴇᴅ】ᴀɴᴅ ᴘᴏᴡᴇʀꜰᴜʟ ꜰɪʟᴇ ꜱᴛᴏʀᴇ ʙᴏᴛ \n+└ᴄʟᴏɴᴇ ғᴇᴀᴛᴜʀᴇ┘+└sᴛʀᴇᴀᴍ / ᴅᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ ғᴇᴀᴛᴜʀᴇ┘\n+├ᴄᴜꜱᴛᴏᴍ ᴜʀʟ ꜱʜᴏʀᴛɴᴇʀ ꜱᴜᴘᴘᴏʀᴛ┤+  \nᢵᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ sᴜᴘᴘᴏʀᴛ ᢴ ᢾᴀɴᴅ ʙᴇꜱᴛ ᴜɪ ᴘᴇʀꜰᴏʀᴍᴀɴᴄᴇᢿ</b>"""
-    def __init__(self):
-        from config import UPDATE, SUPPORT, OWNER
-        self.UPDATE = UPDATE
-        self.SUPPORT = SUPPORT
-        self.OWNER = OWNER
         
     CAPTION = """<b>📂 ғɪʟᴇɴᴀᴍᴇ : {file_name}
 
 sɪᴢᴇ ⚙️: {file_size}
 
 Jᴏɪɴ [ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ](https://t.me/ultroid_Official)</b>""" 
-
-
 
     SHORTENER_API_MESSAGE = """<b>Tᴏ ᴀᴅᴅ ᴏʀ ᴜᴘᴅᴀᴛᴇ ʏᴏᴜʀ Sʜᴏʀᴛɴᴇʀ Wᴇʙsɪᴛᴇ API, /api (ᴀᴘɪ)
             
