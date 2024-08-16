@@ -19,6 +19,7 @@ def is_enabled(value, default):
 UPDATE = environ.get("UPDATE", "ultroid_official")
 SUPPORT = environ.get("SUPPORT", "ultroid0fficial_chat")
 OWNER = environ.get("OWNER", "jatin_24x")
+OWNER_ID = int(environ.get("OWNER_ID", "1216886"))
 
 # Bot Information
 API_ID = int(environ.get("API_ID", ""))
