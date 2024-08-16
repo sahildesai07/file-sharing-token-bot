@@ -103,8 +103,8 @@ Copyright ©️ [PhdLust](https://telegram.me/UltroidxTeam)
 <b><details><summary>Tap On Me For See Details Of Owner</summary>
 
 - YouTube Channel : [PhdLust](https://youtube.com/@Phdlust)
-- Telegram Channel : [VJ Botz](https://telegram.me/ultroid_Official)
-- Contact Link : [King VJ](https://telegram.me/UltroidxTeam)
+- Telegram Channel : [Ultroid_official](https://telegram.me/ultroid_Official)
+- Contact Link : [UltroidXTeam](https://telegram.me/UltroidxTeam)
 - Instagram Id Link : [PhdLust](https://instagram.com/tech.vj) #credited TechVJ
 
 </b>
