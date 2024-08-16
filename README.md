@@ -1,262 +1,119 @@
-# 📁 File Sharing Token Bot
-
-<div align="center" style="border: 2px solid #e94560; border-radius: 10px;">
-  <img src="https://yt3.googleusercontent.com/p9g9i5N55WgCn1mFFjl8iut4BOd0O4RRjn7WB_Silj9JmJ42tE-yhdZ0oR_7m-F4kGHT22Br=s176-c-k-c0x00ffffff-no-rj" alt="Bot" width="150" style="border-radius: 10px;">
-</div>
-
 <p align="center">
-  <a href="https://t.me/ultroid_official">
-    <img src="https://img.shields.io/badge/Ultroid%20%F0%9D%95%8F%20Official-Channel-blue?style=for-the-badge&logo=telegram" alt="Ultroid Official Channel">
-  </a>
-  <a href="https://t.me/ultroidofficial_chat">
-    <img src="https://img.shields.io/badge/Ultroid%20%F0%9D%95%8F%20Official-Group-blue?style=for-the-badge&logo=telegram" alt="Ultroid Official Group">
-  </a>
+  <img src="https://graph.org/file/d57d6f83abb6b8d0efb02.jpg" alt="UXB-FILE-STORE-BOT Logo">
+</p>
+<h1 align="center">
+  UXB-FILE-STORE-BOT
+</h1>
+
+![Typing SVG](https://readme-typing-svg.herokuapp.com/?lines=Welcome+To+UXB-FILE-STORE-BOT;A+Highly+Advance+File+Store+Bot;Made+By+Yt-@Phdlust!;With+Clone+Feature+Stream/Download+Link;Custom+Url+Shortner+Auto+Delete+Feature;A+Bot+With+Fully+Advanced+Feature!;Must+Give+Credit+To+Tech+VJ;Because+He+Public+The+Paid+Repo;Thank+You!)
 </p>
 
-Telegram Bot to store posts and documents accessible via special links.
+### Deploy Tutorial [Video Link](https://youtu.be/VxAn9VcYtQg) #credit
 
-## 🚀 Overview
+## Features
 
-File Sharing Token Bot is a Telegram bot designed to store posts and documents, accessible through special links. This bot provides a convenient way to manage and share content within Telegram.
+<b><details><summary>Tap On Me For Bot Features</summary>
+ 
+- [x] Permanent Link By Using Website [ Premium Feature] 
+- [x] Clone Feature Added [ Premium Feature] 
+- [x] Token Verification Feature 
+- [x] Stram Feature Added With Many Player Support
+- [x] Custom Url Shortner Support Any User Can Add His Own Shortner
+- [x] Batch Support Added, Any User Can Use Batch By Making Bot Admin In His File Store Channel
+- [x] Auto Delete Feature Added
+- [x] Custom Start Message With Picture And Buttons
+</b>
+</details>
 
-### ✨ Features
+## Environment Variables
 
-- Store posts and documents.
-- Access content via special links.
-- Easy to deploy and customize.
-- Token Verifiction
-- Auto Deletion
+<b><details><summary>Tap On Me For Environment Variable</summary>
 
-## 🛠️ Setup
+- `API_ID` : Get From [my.telegram.org](https://my.telegram.org)
+- `API_HASH` : Get From [my.telegram.org](https://my.telegram.org)
+- `BOT_TOKEN` : Get From [BotFather](https://telegram.me/BotFather)
+- `BOT_USERNAME` : Your Bot Username Without @
+- `DB_URI` : Mongodb Database Url For Main Bot [Tutorial Watch Here](https://youtu.be/I36_OTWvT2w)
+- `CDB_URI` : Mongodb Database Url For Clone Bot [Tutorial Watch Here](https://youtu.be/I36_OTWvT2w)
+- `ADMINS` : It mean Admin/Owner Id For Broadcasting Message.
+- `LOG_CHANNEL` : Log channel id start with -100xxxxxx
+- `BIN_CHANNEL` : Bin channel id start with -100xxxxxx
+- `FILE_STORE_CHANNEL` : File Store Channel id start with -100xxxxxx
+- `FQDN` : Your Server App Link Without https://
+- `AUTO_DELETE` : Time In Minutes
+- `AUTO_DELETE_TIME` : Time In Seconds
+- `PYTHON_VERSION` : This Variable Is Only For Render, Value IS `3.10.8`
+- `PORT` : This Variable Is Only For Render, Value IS `8080`
+</b>
+</details>
 
-To deploy the bot, follow these steps:
+## See How Bot Look Like
 
-1. Add the bot to a database channel with all permissions.
-2. Add the bot to the ForceSub channel as an admin with "Invite Users via Link" permission if ForceSub is enabled.
+<b><details><summary>Tap On Me For Demo Bot</summary></b>
 
-## 📦 Installation
+<img src="https://graph.org/file/bb9c59043c52072e8dc93.jpg" alt="Bot Demo">
+<img src="https://graph.org/file/295e41dfab93acf42a111.jpg" alt="Bot Demo">
+<img src="https://graph.org/file/ccc1b6ab4967a7d155ab8.jpg" alt="Bot Demo">
+<img src="https://graph.org/file/75db5257c39436b734b49.jpg" alt="Bot Demo">
+<img src="https://graph.org/file/1ce62a17012ed5723aaca.jpg" alt="Bot Demo">
+</details>
 
-### Deploy on Heroku
+## Command To Use Bot
 
-Click the button below to deploy the bot on Heroku:
+<b><details><summary>Tap On Me For Bot Commands</summary>
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+🖍️ Main Bot Commands :-
 
-For a detailed deployment guide, watch [this tutorial video](https://youtu.be/7jBbBL9t9jI?si=j52MwTn41TXsc76l).
+- `/start` : By This Command You Can Check Bot Is Alive Or Not
+- `/link` : By This Command You Can Generate A Shareable Link Of File By Replying This Command To That File
+- `/batch` : By This Command You Can Generate Multiple File Shareable Link At A Time [Use Like This /batch (first post link) (last post link)]
+- `/base_site` : By This Command You Can Set Your Url Shortner Domain [Use Like This /base_site domain.com]
+- `/api` : By This Command You Can Set Your Url Shortner Api [Use Like This /api (your api key)]
+- `/deletecloned` : By This Command You Can Delete Your Cloned Bot [Use Like This /deletecloned (your bot token)]
+- `/broadcast` : By Using This Command You Can Broadcast A Message To Your Bot User, Reply This Command To Broadcast Message [Owner Only Command]
 
-### Deploy on Railway
+🖍️ Clone Bot Commands :- 
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template/1jKLr4)
+- `/start` : By This Command You Can Check Bot Is Alive Or Not
+- `/link` : By This Command You Can Generate A Shareable Link Of File By Replying This Command To That File
+- `/base_site` : By This Command You Can Set Your Url Shortner Domain [Use Like This /base_site domain.com]
+- `/api` : By This Command You Can Set Your Url Shortner Api [Use Like This /api (your api key)]
+- `/broadcast` : By Using This Command You Can Broadcast A Message To Your Bot User, Reply This Command To Broadcast Message [Clone Bot Owner Only Command]
 
-### Deploy on Koyeb
+</b>
+</details>
 
-Click the button below to deploy the bot on Koyeb:
+## Support
 
-[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=git&repository=github.com/sahildesai07/file-sharing-token-bot&branch=main&name=file-sharing-bot)
+<b><details><summary>Tap On Me For See Credit</summary>
 
-### Deploy on Your VPS
+💝 Credit Goes To [PhdLust](https://telegram.me/UltroidxTeam)
 
-```bash
-git clone https://github.com/sahildesai07/file-sharing-token-bot
-cd file-sharing-token-bot
-pip3 install -r requirements.txt
-# <Create config.py appropriately>
-python3 main.py
-````
----
-## Deploy on VPS
----
-## Prerequisites
+🖍️ This Code Is Fully Written Or Coded And Public By [PhdLust](https://telegram.me/UltroidxTeam) So Don't Forgot To Give Credit
 
-### 1. Installing requirements
+💖 And Thank You So Much To All Who Help In This Journey 💕
 
-- Clone this repo:
+Copyright ©️ [PhdLust](https://telegram.me/UltroidxTeam)
 
-```
-git clone https://github.com/sahildesai07/file-sharing-token-bot/ && cd file-sharing-token-bot
-```
+</b>
+</details>
 
-- For Debian based distros
+## About
 
-```
-sudo apt install python3 python3-pip
-```
+<b><details><summary>Tap On Me For See Details Of Owner</summary>
 
-Install Docker by following the [Official docker docs](https://docs.docker.com/engine/install/#server).
-Or you can use the convenience script: `curl -fsSL https://get.docker.com |  bash`
+- YouTube Channel : [PhdLust](https://youtube.com/@Phdlust)
+- Telegram Channel : [VJ Botz](https://telegram.me/ultroid_Official)
+- Contact Link : [King VJ](https://telegram.me/UltroidxTeam)
+- Instagram Id Link : [PhdLust](https://instagram.com/tech.vj) #credited TechVJ
 
+</b>
+</details>
 
-- For Arch and it's derivatives:
 
-```
-sudo pacman -S docker python
-```
+### Copyright ©️ [PhdLust](https://telegram.me/UltroidxTeam)
 
-------
-
-### 2. Build And Run the Docker Image
-
-Make sure you still mount the app folder and installed the docker from official documentation.
-
-- There are two methods to build and run the docker:
-  1. Using official docker commands.
-  2. Using docker-compose.
-
-------
-
-#### Build And Run The Docker Image Using Official Docker Commands
-
-- Start Docker daemon (SKIP if already running, mostly you don't need to do this):
-
-```
-sudo dockerd
-```
-
-- Build Docker image:
-
-```
-sudo docker build . -t uxbbot
-```
-
-- Run the image:
-
-```
-sudo docker run -p 80:80 -p 8080:8080 uxbbot
-```
-
-- To stop the running image:
-
-```
-sudo docker ps
-```
-
-```
-sudo docker stop id
-```
-
-----
-
-#### Build And Run The Docker Image Using docker-compose
-
-**NOTE**: If you want to use ports other than 80 and 8080 change it in [docker-compose.yml](docker-compose.yml).
-
-- Install docker compose
-
-```
-sudo apt install docker-compose
-```
-
-- Build and run Docker image:
-
-```
-sudo docker-compose up --build
-```
-
-- To stop the running image:
-
-```
-sudo docker-compose stop
-```
-
-- To run the image:
-
-```
-sudo docker-compose start
-```
-
-- To get latest log from already running image (after mounting the folder):
-
-```
-sudo docker-compose up
-```
-
----
-
-Cmd to start the Bot: bash start.sh
-🔧 Admin Commands
-
-```
-start - start the bot or get posts
-
-batch - create link for more than one posts
-
-genlink - create link for one post
-
-users - view bot statistics
-
-broadcast - broadcast any messages to bot users
-
-stats - checking your bot uptime
-```
-
-🛠️ Variables
-
-* `API_HASH` Your API Hash from my.telegram.org
-* `APP_ID ` Your API ID from my.telegram.org
-* `TG_BOT_TOKEN` Your bot token from @BotFather
-* `OWNER_ID` Must enter Your Telegram Id
-* `CHANNEL_ID` Your Channel ID eg:- -100xxxxxxxx
-* `DB_URI ` Your mongo db url [tutorial video](https://youtu.be/qFB0cFqiyOM).
-* `DB_name ` Your mongo db session name ( random )
-* `ADMINS` Optional: A space separated list of user_ids of Admins, they can only create links
-* `START_MESSAGE` Optional: start message of bot, use HTML and <a href='https://github.com/codexbotz/File-Sharing-Bot/blob/main/README.md#start_message'>fillings</a>
-* `FORCE_SUB_MESSAGE`Optional:Force sub message of bot, use HTML and Fillings
-* `FORCE_SUB_CHANNEL` Optional: ForceSub Channel ID, leave 0 if you want disable force sub
-* `PROTECT_CONTENT` Optional: True if you need to prevent files from forwarding
-
-### Extra Variables
-
-* `CUSTOM_CAPTION` put your Custom caption text if you want Setup Custom Caption, you can use HTML and <a href='https://github.com/7thofficial/File-Sharing-Bot/blob/main/README.md#custom_caption'>fillings</a> for formatting (only for documents)
-* `DISABLE_CHANNEL_BUTTON` Put True to Disable Channel Share Button, Default if False
-* `BOT_STATS_TEXT` put your custom text for stats command, use HTML and <a href='https://github.com/7thofficial/File-Sharing-Bot/blob/main/README.md#custom_stats'>fillings</a>
-* `USER_REPLY_TEXT` put your text to show when user sends any message, use HTML
-
-### Token Variables
-
-* `IS_VERIFY` = Default : "True" (if you want off : False )
-* `SHORTLINK_URL` = Your shortner Url ( ex. "api.shareus.io")
-* `SHORTLINK_API` = Your shortner API (ex. "PUIAQBIFrydvLhIzAOeGV8yZppu2")
-* `VERIFY_EXPIRE` = ( ex. 86400)) # Add time in seconds
-
-
-### Fillings
-#### START_MESSAGE | FORCE_SUB_MESSAGE
-
-* `{first}` - User first name
-* `{last}` - User last name
-* `{id}` - User ID
-* `{mention}` - Mention the user
-* `{username}` - Username
-
-#### CUSTOM_CAPTION
-
-* `{filename}` - file name of the Document
-* `{previouscaption}` - Original Caption
-
-#### CUSTOM_STATS
-
-* `{uptime}` - Bot Uptime
-
-
-💬 Support
-Join Our [Telegram Group](https://www.telegram.dog/ultroidofficial_chat) For Support/Assistance And Our [Channel](https://www.telegram.dog/ultroid_official) For Updates.   
-   
-Report Bugs, Give Feature Requests There..   
-
-🎉 Credits
-
-Thanks to Dan for his awesome library. [Libary](https://github.com/pyrogram/pyrogram)
-Our support group members.
-
-📝 License
-GNU GPLv3 [![GNU GPLv3 Image](https://www.gnu.org/graphics/gplv3-127x51.png)](http://www.gnu.org/licenses/gpl-3.0.en.html) 
-
-[FILE-SHARING-BOT](https://github.com/7thofficial/File-Sharing-Bot/) is Free Software: You can use, study share and improve it at your
-will. Specifically you can redistribute and/or modify it under the terms of the
-[GNU General Public License](https://www.gnu.org/licenses/gpl.html) as
-published by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version. 
-
-
-   **Star this Repo if you Liked it ⭐⭐⭐**
+<b>Selling This Repo Or Code Of This Repo For Money Is Strictly Prohibited 🚫</b>
+<b>This code is from TechVJ , special thx to TechVJ </b>
+<b> Open source </b>
 
