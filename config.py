@@ -81,9 +81,9 @@ else:
 URL = environ.get("URL", "https://testofvjfilter-1fa60b1b8498.herokuapp.com/")
 
 #credit change
-update = environ.get("update", "ultroid_official")
-support = environ.get("support", "ultroid0fficial_chat")
-owner = environ.get("owner", "jatin_24x")
+UPDATE = environ.get("UPDATE", "ultroid_official")
+SUPPORT = environ.get("SUPPORT", "ultroid0fficial_chat")
+OWNER = environ.get("OWNER", "jatin_24x")
 
 
 
