@@ -32,6 +32,57 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
+@Bot.on_message(filters.command('start') & filters.private )
+async def handle_start(client: Client, message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username or "NoUsername"
+
+    logger.info(f"/start command received from user {user_id} ({username}).")
+
+    try:
+        try:
+            member = await bot.get_chat_member(CHANNEL_ID, user_id)
+            if member.status in ["member", "administrator", "creator"]:
+                await message.reply("You are already a member of the channel and have access to the bot's features.")
+                logger.info(f"User {user_id} is a member of the channel.")
+                return
+        except UserNotParticipant:
+            pass
+
+        join_link = await generate_invite_link()
+        await message.reply(f"Please join the channel to get access: {join_link}")
+        logger.info(f"Sent join link to user {user_id}.")
+
+        pending_request = {
+            "user_id": user_id,
+            "username": username,
+            "status": "pending"
+        }
+        collection.insert_one(pending_request)
+
+        while True:
+            pending_request = collection.find_one({"user_id": user_id, "status": "pending"})
+            if pending_request:
+                await asyncio.sleep(10)
+                try:
+                    member = await bot.get_chat_member(CHANNEL_ID, user_id)
+                    if member.status in ["member", "administrator", "creator"]:
+                        collection.update_one({"user_id": user_id}, {"$set": {"status": "approved"}})
+                        await message.reply("You are now a member of the channel and have access to the bot's features.")
+                        logger.info(f"User {user_id} has joined the channel and been granted access.")
+                        break
+                except UserNotParticipant:
+                    logger.info(f"User {user_id} has not joined the channel yet.")
+            else:
+                await message.reply("Error in processing your request. Please try again later.")
+                logger.error(f"Request for user {user_id} not found or already processed.")
+                break
+
+    except Exception as e:
+        logger.error(f"An error occurred while handling /start command: {e}")
+        await message.reply("An error occurred while processing your request. Please try again later.")
+
+
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
