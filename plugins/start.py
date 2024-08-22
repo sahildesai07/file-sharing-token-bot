@@ -17,6 +17,8 @@ from bot import Bot
 from config import (
     ADMINS,
     FORCE_MSG,
+    FORCE_SUB_CHANNEL,
+    DATABASE_URL,
     START_MSG,
     CUSTOM_CAPTION,
     IS_VERIFY,
@@ -32,6 +34,16 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
+client = MongoClient(DATABASE_URL)
+db = client["telegrambotdb"]
+collection = db["userrequests"]
+
+async def generate_invite_link():
+    async with bot:
+        chat = await bot.get_chat(CHANNEL_ID)
+        invite_link = await bot.export_chat_invite_link(chat.id)
+        return invite_link
+
 @Bot.on_message(filters.command('start') & filters.private )
 async def handle_start(client: Client, message: Message):
     user_id = message.from_user.id
@@ -41,7 +53,7 @@ async def handle_start(client: Client, message: Message):
 
     try:
         try:
-            member = await bot.get_chat_member(CHANNEL_ID, user_id)
+            member = await bot.get_chat_member(FORCE_SUB_CHANNEL, user_id)
             if member.status in ["member", "administrator", "creator"]:
                 await message.reply("You are already a member of the channel and have access to the bot's features.")
                 logger.info(f"User {user_id} is a member of the channel.")
@@ -65,7 +77,7 @@ async def handle_start(client: Client, message: Message):
             if pending_request:
                 await asyncio.sleep(10)
                 try:
-                    member = await bot.get_chat_member(CHANNEL_ID, user_id)
+                    member = await bot.get_chat_member(FORCE_SUB_CHANNEL, user_id)
                     if member.status in ["member", "administrator", "creator"]:
                         collection.update_one({"user_id": user_id}, {"$set": {"status": "approved"}})
                         await message.reply("You are now a member of the channel and have access to the bot's features.")
