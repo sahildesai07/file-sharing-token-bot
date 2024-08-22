@@ -1,4 +1,3 @@
-
 from aiohttp import web
 from plugins import web_server
 
@@ -31,37 +30,29 @@ class Bot(Client):
 
         if FORCE_SUB_CHANNEL:
             try:
-                link = (await self.get_chat(FORCE_SUB_CHANNEL)).invite_link
+                chat = await self.get_chat(FORCE_SUB_CHANNEL)
+                link = chat.invite_link
                 if not link:
-                    await self.export_chat_invite_link(FORCE_SUB_CHANNEL)
-                    link = (await self.get_chat(FORCE_SUB_CHANNEL)).invite_link
+                    link = await self.export_chat_invite_link(FORCE_SUB_CHANNEL)
                 self.invitelink = link
-            except Exception as a:
-                self.LOGGER(__name__).warning(a)
-                self.LOGGER(__name__).warning("Bot can't Export Invite link from Force Sub Channel!")
-                self.LOGGER(__name__).warning(f"Please Double check the FORCE_SUB_CHANNEL value and Make sure Bot is Admin in channel with Invite Users via Link Permission, Current Force Sub Channel Value: {FORCE_SUB_CHANNEL}")
-                self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroid_official for support")
+            except Exception as e:
+                self.LOGGER(__name__).warning(f"Failed to get or export invite link: {e}")
                 sys.exit()
+
         try:
             db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
             test = await self.send_message(chat_id=db_channel.id, text="Test Message")
             await test.delete()
         except Exception as e:
-            self.LOGGER(__name__).warning(f"Error occurred: {e}")
-            self.LOGGER(__name__).warning(f"CHANNEL_ID: {CHANNEL_ID}, DB Channel ID: {db_channel.id if 'db_channel' in locals() else 'N/A'}")
-            self.LOGGER(__name__).warning(f"Make sure bot is Admin in DB Channel, and Double-check the CHANNEL_ID value.")
-            self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroid_official for support")
+            self.LOGGER(__name__).warning(f"Error occurred with CHANNEL_ID: {CHANNEL_ID}, Exception: {e}")
             sys.exit()
 
         self.set_parse_mode(ParseMode.HTML)
-        self.LOGGER(__name__).info(f"Bot Running..!\n\nCreated by \nhttps://t.me/ultroid_official")
-        self.LOGGER(__name__).info(f""" \n\n       
-(っ◔◡◔)っ ♥ ULTROIDOFFICIAL ♥
-░╚════╝░░╚════╝░╚═════╝░╚══════╝
-                                          """)
+        self.LOGGER(__name__).info("Bot is running.")
         self.username = usr_bot_me.username
-        #web-response
+
+        # Start web server
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
