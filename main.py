@@ -1,3 +1,9 @@
+import os
 from bot import Bot
 
-Bot().run()
+def main():
+    bot = Bot()
+    bot.run()
+
+if __name__ == "__main__":
+    main()
