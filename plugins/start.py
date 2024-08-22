@@ -1,4 +1,3 @@
-# https://www.youtube.com/channel/UC7tAa4hho37iNv731_6RIOg
 import asyncio
 import base64
 import logging
@@ -32,19 +31,25 @@ from config import (
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
 from database.database import add_user, del_user, full_userbase, present_user
-from shortzy import Shortzy
 
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Initialize the MongoDB client
 client = MongoClient(DATABASE_URL)
 db = client["telegrambotdb"]
 collection = db["userrequests"]
 
+bot = Bot()
+
 async def generate_invite_link():
     async with bot:
-        chat = await bot.get_chat(CHANNEL_ID)
+        chat = await bot.get_chat(FORCE_SUB_CHANNEL)
         invite_link = await bot.export_chat_invite_link(chat.id)
         return invite_link
 
-@Bot.on_message(filters.command('start') & filters.private )
+@bot.on_message(filters.command('start') & filters.private)
 async def handle_start(client: Client, message: Message):
     user_id = message.from_user.id
     username = message.from_user.username or "NoUsername"
@@ -93,6 +98,7 @@ async def handle_start(client: Client, message: Message):
     except Exception as e:
         logger.error(f"An error occurred while handling /start command: {e}")
         await message.reply("An error occurred while processing your request. Please try again later.")
+
 
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
