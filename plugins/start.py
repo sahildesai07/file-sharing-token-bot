@@ -23,28 +23,20 @@ async def generate_join_request_link(client: Client):
         return None
 
 
-async def is_subscribed(client: Client, update: Message):
-    if not FORCE_SUB_CHANNEL:
+from pyrogram import Client, errors
+
+async def is_subscribed(client: Client, chat_id: int, user_id: int) -> bool:
+    if not chat_id:
         return True
 
-    user_id = update.from_user.id
-
     try:
-        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-        if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+        member = await client.get_chat_member(chat_id=chat_id, user_id=user_id)
+        if member.status in ["member", "administrator", "creator"]:
             return True
-    except UserNotParticipant:
-        pass
+    except errors.UserNotParticipant:
+        return False
     except Exception as e:
         print(f"Error checking membership: {e}")
-        return False
-
-    try:
-        async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL):
-            if request.user.id == user_id:
-                return True
-    except Exception as e:
-        print(f"Error checking join requests: {e}")
 
     return False
 
