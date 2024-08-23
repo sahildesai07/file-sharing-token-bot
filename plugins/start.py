@@ -10,7 +10,6 @@ from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL
 from helper_func import encode, decode, get_messages, subscribed
 from database.database import add_user, del_user, full_userbase, present_user
 
-
 # Function to generate a request-to-join link
 async def generate_join_request_link(client: Client):
     try:
@@ -22,6 +21,7 @@ async def generate_join_request_link(client: Client):
     except Exception as e:
         print(f"Error creating join request link: {e}")
         return None
+
 
 async def is_subscribed(client: Client, update: Message):
     if not FORCE_SUB_CHANNEL:
