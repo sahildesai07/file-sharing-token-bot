@@ -19,33 +19,28 @@ START_MSG = "Welcome, {first} {last} {username}!"
 
 @Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
-    id = message.from_user.id
+    user_id = message.from_user.id
     
-    try:
-        # Step 1: Check if the user's join request is pending using the 'query' parameter
-        async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL, query=str(id)):
-            if request.user.id == id:
-                await message.reply("Your join request is pending approval.")
-                return
-
-        # Step 2: Check if the user is already a member
-        memberStatus = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=id)
-        if memberStatus.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-            await message.reply("Welcome back! You are already a member.")
+    # Step 1: Check if the user's join request is pending using the 'query' parameter
+    async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL, query=str(user_id)):
+        if request.user.id == user_id:
+            await message.reply("Your join request is pending approval.")
             return
 
-        # Step 3: Send the join link if the user is neither in pending nor a member
-        await message.reply(
-            text="Please join the channel using the link below.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)]
-            ]),
-            quote=True
-        )
+    # Step 2: Check if the user is already a member
+    member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+    if member_status.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+        await message.reply("Welcome back! You are already a member.")
+        return
 
-    except RPCError as e:
-        await message.reply(f"An error occurred: {e}")
-
+    # Step 3: Send the join link if the user is neither in pending nor a member
+    await message.reply(
+        text="Please join the channel using the link below.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)]
+        ]),
+        quote=True
+    )
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
