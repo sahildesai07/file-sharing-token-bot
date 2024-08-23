@@ -1,12 +1,7 @@
 import asyncio
-import base64
 import logging
-import random
-import string
-import time
-
 from pyrogram import Client, filters
-from pyrogram.enums import ParseMode, ChatMemberStatus
+from pyrogram.enums import ChatMemberStatus
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserNotParticipant
 
@@ -17,15 +12,11 @@ from config import (
     FORCE_SUB_CHANNEL,
     START_MSG,
     CUSTOM_CAPTION,
-    IS_VERIFY,
-    VERIFY_EXPIRE,
-    REQ_JOIN,
-    SHORTLINK_API,
-    SHORTLINK_URL,
-    DISABLE_CHANNEL_BUTTON,
     PROTECT_CONTENT,
     TUT_VID,
-    OWNER_ID,
+    SHORTLINK_API,
+    SHORTLINK_URL,
+    REQ_JOIN
 )
 from helper_func import (
     subscribed,
@@ -33,8 +24,6 @@ from helper_func import (
     decode,
     get_messages,
     get_shortlink,
-    get_verify_status,
-    update_verify_status,
     get_exp_time
 )
 from database.database import add_user, del_user, full_userbase, present_user
@@ -45,33 +34,59 @@ logger = logging.getLogger(__name__)
 
 bot = Bot()
 
+@bot.on_message(filters.command('stats') & filters.user(ADMINS))
+async def stats(client: Client, message: Message):
+    now = datetime.now()
+    delta = now - bot.uptime
+    time = get_readable_time(delta.seconds)
+    await message.reply(BOT_STATS_TEXT.format(uptime=time))
+
+@bot.on_message(filters.private & filters.incoming)
+async def private_message_handler(client: Client, message: Message):
+    user_id = message.from_user.id
+
+    if user_id in ADMINS:
+        await message.reply("You are the admin! Additional actions can be added here.")
+    else:
+        if not await present_user(user_id):
+            try:
+                await add_user(user_id)
+            except Exception as e:
+                logger.error(f"Error adding user {user_id}: {e}")
+                pass
+
+    if USER_REPLY_TEXT:
+        await message.reply(USER_REPLY_TEXT)
+
 @bot.on_callback_query(filters.regex('approve_join_request'))
 async def approve_join_request(client: Client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
 
-    # Check if the user is an admin in the AUTH_CHANNEL
-    member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-    if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
-        await callback_query.answer("You don't have permission to approve join requests.", show_alert=True)
-        return
+    try:
+        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+            await callback_query.answer("You don't have permission to approve join requests.", show_alert=True)
+            return
 
-    # Approve the join request if the user is an admin
-    await client.approve_chat_join_request(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-    await callback_query.answer("Join request has been approved!", show_alert=True)
+        await client.approve_chat_join_request(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        await callback_query.answer("Join request has been approved!", show_alert=True)
+    except Exception as e:
+        logger.error(f"Error approving join request: {e}")
 
 @bot.on_callback_query(filters.regex('decline_join_request'))
 async def decline_join_request(client: Client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
 
-    # Check if the user is an admin in the AUTH_CHANNEL
-    member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-    if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
-        await callback_query.answer("You don't have permission to decline join requests.", show_alert=True)
-        return
+    try:
+        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+            await callback_query.answer("You don't have permission to decline join requests.", show_alert=True)
+            return
 
-    # Decline the join request if the user is an admin
-    await client.decline_chat_join_request(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-    await callback_query.answer("Join request has been declined!", show_alert=True)
+        await client.decline_chat_join_request(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        await callback_query.answer("Join request has been declined!", show_alert=True)
+    except Exception as e:
+        logger.error(f"Error declining join request: {e}")
 
 async def is_subscribed(client: Client, user_id: int) -> bool:
     if not FORCE_SUB_CHANNEL:
@@ -80,17 +95,16 @@ async def is_subscribed(client: Client, user_id: int) -> bool:
         return True
     try:
         member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        return member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
     except UserNotParticipant:
         return False
-    return member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
 
 @bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
 
-    # Check if the user is subscribed
     if not await is_subscribed(client, user_id):
-        if REQ_JOIN:  # Handle join request mode
+        if REQ_JOIN:
             invite_link = await client.create_chat_invite_link(chat_id=FORCE_SUB_CHANNEL, creates_join_request=True)
             await message.reply(
                 text="Please join the channel to use this bot.",
@@ -99,7 +113,7 @@ async def start_command(client: Client, message: Message):
                 ]),
                 quote=True
             )
-        else:  # Normal force join mode
+        else:
             invite_link = await client.export_chat_invite_link(chat_id=FORCE_SUB_CHANNEL)
             await message.reply(
                 text=FORCE_MSG.format(
@@ -116,65 +130,50 @@ async def start_command(client: Client, message: Message):
             )
         return
 
-    # Check verification status and handle accordingly
-    verify_status = await get_verify_status(user_id)
-    if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-        await update_verify_status(user_id, is_verified=False)
-
-    if "verify_" in message.text:
-        _, token = message.text.split("_", 1)
-        if verify_status['verify_token'] != token:
-            return await message.reply("Your token is invalid or expired. Try again by clicking /start")
-        await update_verify_status(user_id, is_verified=True, verified_time=time.time())
-        reply_markup = None if verify_status["link"] == "" else None
-        await message.reply(f"Your token is successfully verified and valid for: {get_exp_time(VERIFY_EXPIRE)}", reply_markup=reply_markup, protect_content=False, quote=True)
-
-    elif len(message.text) > 7 and verify_status['is_verified']:
+    # Handle other message types after subscription check
+    if len(message.text) > 7:
         try:
             base64_string = message.text.split(" ", 1)[1]
-        except IndexError:
-            return
-        decoded_string = await decode(base64_string)
-        argument = decoded_string.split("-")
-        if len(argument) == 3:
-            try:
-                start = int(int(argument[1]) / abs(client.db_channel.id))
-                end = int(int(argument[2]) / abs(client.db_channel.id))
-            except ValueError:
-                return
-            ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
-        elif len(argument) == 2:
-            try:
-                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-            except ValueError:
-                return
+            decoded_string = await decode(base64_string)
+            argument = decoded_string.split("-")
+            if len(argument) == 3:
+                try:
+                    start = int(int(argument[1]) / abs(client.db_channel.id))
+                    end = int(int(argument[2]) / abs(client.db_channel.id))
+                    ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
+                except ValueError:
+                    return
+            elif len(argument) == 2:
+                try:
+                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+                except ValueError:
+                    return
 
-        temp_msg = await message.reply("Please wait...")
-        try:
+            temp_msg = await message.reply("Please wait...")
             messages = await get_messages(client, ids)
-        except Exception:
-            await message.reply_text("Something went wrong!")
-            return
-        await temp_msg.delete()
+            await temp_msg.delete()
 
-        snt_msgs = []
+            snt_msgs = []
+            for msg in messages:
+                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else ("" if not msg.caption else msg.caption.html)
+                reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
-        for msg in messages:
-            caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else ("" if not msg.caption else msg.caption.html)
-            reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
+                try:
+                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    await asyncio.sleep(0.5)
+                    snt_msgs.append(snt_msg)
+                except FloodWait as e:
+                    await asyncio.sleep(e.x)
+                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    snt_msgs.append(snt_msg)
+                except Exception as e:
+                    logger.error(f"Error copying message: {e}")
+                    pass
 
-            try:
-                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                await asyncio.sleep(0.5)
-                snt_msgs.append(snt_msg)
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                snt_msgs.append(snt_msg)
-            except Exception:
-                pass
+        except Exception as e:
+            logger.error(f"Error handling message: {e}")
 
-    elif verify_status['is_verified']:
+    else:
         reply_markup = InlineKeyboardMarkup(
             [[InlineKeyboardButton("About Me 🥵", callback_data="about"),
               InlineKeyboardButton("Close", callback_data="close")]]
@@ -192,99 +191,7 @@ async def start_command(client: Client, message: Message):
             quote=True
         )
 
-    else:
-        if IS_VERIFY and not verify_status['is_verified']:
-            token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-            await update_verify_status(user_id, verify_token=token, link="")
-            link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
-            btn = [
-                [InlineKeyboardButton("Click here to Continue", url=link)],
-                [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
-                [InlineKeyboardButton(text='Try Again', url=f"https://t.me/{client.username}?start={message.command[1]}")]
-            ]
-            await message.reply(f"Your Ads token is expired. Refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.",
-                                reply_markup=InlineKeyboardMarkup(btn),
-                                protect_content=False,
-                                quote=True)
-
-@bot.on_message(filters.command('start') & filters.private)
-async def not_joined(client: Client, message: Message):
-    buttons = [
-        [InlineKeyboardButton("Join Channel", url=f"https://t.me/{FORCE_SUB_CHANNEL}")]
-    ]
-    if REQ_JOIN:
-        invite_link = await client.create_chat_invite_link(chat_id=FORCE_SUB_CHANNEL, creates_join_request=True)
-        buttons.append(
-            [InlineKeyboardButton("Request to Join Channel", url=invite_link.invite_link)]
-        )
-    try:
-        buttons.append(
-            [InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")]
-        )
-    except IndexError:
-        pass
-
-    await message.reply(
-        text=FORCE_MSG.format(
-            first=message.from_user.first_name,
-            last=message.from_user.last_name,
-            username=None if not message.from_user.username else '@' + message.from_user.username,
-            mention=message.from_user.mention,
-            id=message.from_user.id
-        ),
-        reply_markup=InlineKeyboardMarkup(buttons),
-        quote=True,
-        disable_web_page_preview=True
-    )
-
-       
-#=====================================================================================##
-
-WAIT_MSG = """"<b>Processing ...</b>"""
-
-REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
-
-#=====================================================================================##
-
-    
-'''    
-@Bot.on_message(filters.command('start') & filters.private)
-async def not_joined(client: Client, message: Message):
-    buttons = [
-        [
-            InlineKeyboardButton(
-                "Join Channel",
-                url = client.invitelink)
-        ]
-    ]
-    try:
-        buttons.append(
-            [
-                InlineKeyboardButton(
-                    text = 'Try Again',
-                    url = f"https://t.me/{client.username}?start={message.command[1]}"
-                )
-            ]
-        )
-    except IndexError:
-        pass
-
-    await message.reply(
-        text = FORCE_MSG.format(
-                first = message.from_user.first_name,
-                last = message.from_user.last_name,
-                username = None if not message.from_user.username else '@' + message.from_user.username,
-                mention = message.from_user.mention,
-                id = message.from_user.id
-            ),
-        reply_markup = InlineKeyboardMarkup(buttons),
-        quote = True,
-        disable_web_page_preview = True
-    )
-
-'''
-
-@Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
+@bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
     users = await full_userbase()
