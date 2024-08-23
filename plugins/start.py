@@ -19,6 +19,7 @@ from config import (
     FORCE_SUB_CHANNEL,
     START_MSG,
     CUSTOM_CAPTION,
+    DATABASE_URL,
     IS_VERIFY,
     VERIFY_EXPIRE,
     REQ_JOIN,
