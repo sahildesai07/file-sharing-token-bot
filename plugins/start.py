@@ -24,7 +24,7 @@ async def generate_join_request_link(client: Client):
         return None
 
 # Implement the is_subscribed function
-async def is_subscribed(client: Client, update: Message):
+async def is_subscribed(filter, client, update):
     if not FORCE_SUB_CHANNEL:
         return True
 
