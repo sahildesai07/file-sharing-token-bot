@@ -19,21 +19,28 @@ async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
     try:
-        # Step 1: Generate and provide join request link
-        join_link = await client.create_chat_invite_link(chat_id=FORCE_SUB_CHANNEL, creates_join_request=True)
+        # Step 1: Generate a join request link
+        join_link = await client.create_chat_invite_link(
+            chat_id=FORCE_SUB_CHANNEL,
+            creates_join_request=True  # Generates a join request link
+        )
         
-        # Step 2: Check if the user's join request is pending
-        pending_requests = client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
-        async for request in pending_requests:
-            if request.user.id == user_id:
-                await message.reply("Your join request is pending approval.")
-                return
+        # Step 2: Try to check if the user's join request is pending
+        try:
+            pending_requests = client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
+            async for request in pending_requests:
+                if request.user.id == user_id:
+                    await message.reply("Your join request is pending approval.")
+                    return
+        except RPCError as e:
+            # Handle any error that might occur due to the method's limitations
+            await message.reply(f"An error occurred while checking the join requests: {e}")
+            return
 
         # Step 3: Check if the user is already a member
         member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
         if member_status.status in ["member", "administrator", "creator"]:
             await message.reply("Welcome back! You are already a member.")
-            # Here you can run the logic you intended if the user is a member.
             # Your custom logic code here...
             return
 
@@ -43,7 +50,7 @@ async def start_command(client: Client, message: Message):
             [InlineKeyboardButton("Try Again", callback_data="check_membership")]
         ]
         await message.reply(
-            text="You need to join the channel first.",
+            text="Please request to join our private channel using the link below:",
             reply_markup=InlineKeyboardMarkup(buttons),
             quote=True
         )
@@ -60,13 +67,13 @@ async def check_membership(client: Client, callback_query):
         member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
         if member_status.status in ["member", "administrator", "creator"]:
             await callback_query.message.edit_text("Thanks for joining! You are now a member.")
-            # Here you can run the logic you intended if the user is a member.
             # Your custom logic code here...
         else:
             await callback_query.answer("You haven't joined yet. Please join the channel first.", show_alert=True)
 
     except RPCError as e:
         await callback_query.message.edit_text(f"An error occurred: {e}")
+
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
