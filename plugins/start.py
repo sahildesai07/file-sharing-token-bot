@@ -1,16 +1,14 @@
 import asyncio
 import base64
 import logging
-import os
 import random
-import re
 import string
 import time
 
-from pyrogram import Client, filters, __version__
-from pyrogram.enums import ParseMode #, ChatMemberStatus
+from pyrogram import Client, filters
+from pyrogram.enums import ParseMode, ChatMemberStatus
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
+from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserNotParticipant
 
 from bot import Bot
 from config import (
@@ -19,7 +17,6 @@ from config import (
     FORCE_SUB_CHANNEL,
     START_MSG,
     CUSTOM_CAPTION,
-    DATABASE_URL,
     IS_VERIFY,
     VERIFY_EXPIRE,
     REQ_JOIN,
@@ -30,7 +27,16 @@ from config import (
     TUT_VID,
     OWNER_ID,
 )
-from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
+from helper_func import (
+    subscribed,
+    encode,
+    decode,
+    get_messages,
+    get_shortlink,
+    get_verify_status,
+    update_verify_status,
+    get_exp_time
+)
 from database.database import add_user, del_user, full_userbase, present_user
 
 # Set up logging
@@ -39,34 +45,34 @@ logger = logging.getLogger(__name__)
 
 bot = Bot()
 
-@Bot.on_callback_query(filters.regex('approve_join_request'))
+@bot.on_callback_query(filters.regex('approve_join_request'))
 async def approve_join_request(client: Client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    
+
     # Check if the user is an admin in the AUTH_CHANNEL
-    member = await client.get_chat_member(chat_id=AUTH_CHANNEL, user_id=user_id)
+    member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
     if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
         await callback_query.answer("You don't have permission to approve join requests.", show_alert=True)
         return
-    
+
     # Approve the join request if the user is an admin
-    await client.approve_chat_join_request(chat_id=AUTH_CHANNEL, user_id=user_id)
+    await client.approve_chat_join_request(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
     await callback_query.answer("Join request has been approved!", show_alert=True)
 
-@Bot.on_callback_query(filters.regex('decline_join_request'))
+@bot.on_callback_query(filters.regex('decline_join_request'))
 async def decline_join_request(client: Client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    
+
     # Check if the user is an admin in the AUTH_CHANNEL
-    member = await client.get_chat_member(chat_id=AUTH_CHANNEL, user_id=user_id)
+    member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
     if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
         await callback_query.answer("You don't have permission to decline join requests.", show_alert=True)
         return
-    
+
     # Decline the join request if the user is an admin
-    await client.decline_chat_join_request(chat_id=AUTH_CHANNEL, user_id=user_id)
+    await client.decline_chat_join_request(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
     await callback_query.answer("Join request has been declined!", show_alert=True)
-    
+
 async def is_subscribed(client: Client, user_id: int) -> bool:
     if not FORCE_SUB_CHANNEL:
         return True
@@ -78,15 +84,14 @@ async def is_subscribed(client: Client, user_id: int) -> bool:
         return False
     return member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
 
-    
-@Bot.on_message(filters.command('start') & filters.private)
+@bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
 
     # Check if the user is subscribed
     if not await is_subscribed(client, user_id):
         if REQ_JOIN:  # Handle join request mode
-            invite_link = await client.create_chat_invite_link(chat_id=AUTH_CHANNEL, creates_join_request=True)
+            invite_link = await client.create_chat_invite_link(chat_id=FORCE_SUB_CHANNEL, creates_join_request=True)
             await message.reply(
                 text="Please join the channel to use this bot.",
                 reply_markup=InlineKeyboardMarkup([
@@ -111,118 +116,128 @@ async def start_command(client: Client, message: Message):
             )
         return
 
-    # Other functionalities after checking subscription and verification status
+    # Check verification status and handle accordingly
+    verify_status = await get_verify_status(user_id)
+    if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
+        await update_verify_status(user_id, is_verified=False)
 
+    if "verify_" in message.text:
+        _, token = message.text.split("_", 1)
+        if verify_status['verify_token'] != token:
+            return await message.reply("Your token is invalid or expired. Try again by clicking /start")
+        await update_verify_status(user_id, is_verified=True, verified_time=time.time())
+        reply_markup = None if verify_status["link"] == "" else None
+        await message.reply(f"Your token is successfully verified and valid for: {get_exp_time(VERIFY_EXPIRE)}", reply_markup=reply_markup, protect_content=False, quote=True)
 
-        verify_status = await get_verify_status(id)
-        if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-            await update_verify_status(id, is_verified=False)
-
-        if "verify_" in message.text:
-            _, token = message.text.split("_", 1)
-            if verify_status['verify_token'] != token:
-                return await message.reply("Your token is invalid or Expired. Try again by clicking /start")
-            await update_verify_status(id, is_verified=True, verified_time=time.time())
-            if verify_status["link"] == "":
-                reply_markup = None
-            await message.reply(f"Your token successfully verified and valid for: {get_exp_time(VERIFY_EXPIRE)}", reply_markup=reply_markup, protect_content=False, quote=True)
-
-        elif len(message.text) > 7 and verify_status['is_verified']:
+    elif len(message.text) > 7 and verify_status['is_verified']:
+        try:
+            base64_string = message.text.split(" ", 1)[1]
+        except IndexError:
+            return
+        decoded_string = await decode(base64_string)
+        argument = decoded_string.split("-")
+        if len(argument) == 3:
             try:
-                base64_string = message.text.split(" ", 1)[1]
-            except:
+                start = int(int(argument[1]) / abs(client.db_channel.id))
+                end = int(int(argument[2]) / abs(client.db_channel.id))
+            except ValueError:
                 return
-            _string = await decode(base64_string)
-            argument = _string.split("-")
-            if len(argument) == 3:
-                try:
-                    start = int(int(argument[1]) / abs(client.db_channel.id))
-                    end = int(int(argument[2]) / abs(client.db_channel.id))
-                except:
-                    return
-                if start <= end:
-                    ids = range(start, end+1)
-                else:
-                    ids = []
-                    i = start
-                    while True:
-                        ids.append(i)
-                        i -= 1
-                        if i < end:
-                            break
-            elif len(argument) == 2:
-                try:
-                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                except:
-                    return
-            temp_msg = await message.reply("Please wait...")
+            ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
+        elif len(argument) == 2:
             try:
-                messages = await get_messages(client, ids)
-            except:
-                await message.reply_text("Something went wrong..!")
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+            except ValueError:
                 return
-            await temp_msg.delete()
-            
-            snt_msgs = []
-            
-            for msg in messages:
-                if bool(CUSTOM_CAPTION) & bool(msg.document):
-                    caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
-                else:
-                    caption = "" if not msg.caption else msg.caption.html
 
-                if DISABLE_CHANNEL_BUTTON:
-                    reply_markup = msg.reply_markup
-                else:
-                    reply_markup = None
+        temp_msg = await message.reply("Please wait...")
+        try:
+            messages = await get_messages(client, ids)
+        except Exception:
+            await message.reply_text("Something went wrong!")
+            return
+        await temp_msg.delete()
 
-                try:
-                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    await asyncio.sleep(0.5)
-                    snt_msgs.append(snt_msg)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    snt_msgs.append(snt_msg)
-                except:
-                    pass
+        snt_msgs = []
 
-        elif verify_status['is_verified']:
-            reply_markup = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("About Me 🥵 ", callback_data="about"),
-                  InlineKeyboardButton("Close", callback_data="close")]]
-            )
-            await message.reply_text(
-                text=START_MSG.format(
-                    first=message.from_user.first_name,
-                    last=message.from_user.last_name,
-                    username=None if not message.from_user.username else '@' + message.from_user.username,
-                    mention=message.from_user.mention,
-                    id=message.from_user.id
-                ),
-                reply_markup=reply_markup,
-                disable_web_page_preview=True,
-                quote=True
-            )
+        for msg in messages:
+            caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else ("" if not msg.caption else msg.caption.html)
+            reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
-        else:
-            verify_status = await get_verify_status(id)
-            if IS_VERIFY and not verify_status['is_verified']:
-                short_url = f"inshorturl.com"
-                # TUT_VID = f"https://t.me/ultroid_official/18"
-                token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                await update_verify_status(id, verify_token=token, link="")
-                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
-                btn = [
-                    [InlineKeyboardButton("Click here to Continue", url=link)],
-                    [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)]
-                    [InlineKeyboardButtom(text = 'Try Again', url = f"https://t.me/{client.username}?start={message.command[1]}")]
-                ]
-                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+            try:
+                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                await asyncio.sleep(0.5)
+                snt_msgs.append(snt_msg)
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                snt_msgs.append(snt_msg)
+            except Exception:
+                pass
 
+    elif verify_status['is_verified']:
+        reply_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("About Me 🥵", callback_data="about"),
+              InlineKeyboardButton("Close", callback_data="close")]]
+        )
+        await message.reply_text(
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
+            ),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
+        )
 
-    
-        
+    else:
+        if IS_VERIFY and not verify_status['is_verified']:
+            token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            await update_verify_status(user_id, verify_token=token, link="")
+            link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
+            btn = [
+                [InlineKeyboardButton("Click here to Continue", url=link)],
+                [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
+                [InlineKeyboardButton(text='Try Again', url=f"https://t.me/{client.username}?start={message.command[1]}")]
+            ]
+            await message.reply(f"Your Ads token is expired. Refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.",
+                                reply_markup=InlineKeyboardMarkup(btn),
+                                protect_content=False,
+                                quote=True)
+
+@bot.on_message(filters.command('start') & filters.private)
+async def not_joined(client: Client, message: Message):
+    buttons = [
+        [InlineKeyboardButton("Join Channel", url=f"https://t.me/{FORCE_SUB_CHANNEL}")]
+    ]
+    if REQ_JOIN:
+        invite_link = await client.create_chat_invite_link(chat_id=FORCE_SUB_CHANNEL, creates_join_request=True)
+        buttons.append(
+            [InlineKeyboardButton("Request to Join Channel", url=invite_link.invite_link)]
+        )
+    try:
+        buttons.append(
+            [InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")]
+        )
+    except IndexError:
+        pass
+
+    await message.reply(
+        text=FORCE_MSG.format(
+            first=message.from_user.first_name,
+            last=message.from_user.last_name,
+            username=None if not message.from_user.username else '@' + message.from_user.username,
+            mention=message.from_user.mention,
+            id=message.from_user.id
+        ),
+        reply_markup=InlineKeyboardMarkup(buttons),
+        quote=True,
+        disable_web_page_preview=True
+    )
+
+       
 #=====================================================================================##
 
 WAIT_MSG = """"<b>Processing ...</b>"""
@@ -232,7 +247,7 @@ REPLY_ERROR = """<code>Use this command as a replay to any telegram message with
 #=====================================================================================##
 
     
-    
+'''    
 @Bot.on_message(filters.command('start') & filters.private)
 async def not_joined(client: Client, message: Message):
     buttons = [
@@ -266,6 +281,8 @@ async def not_joined(client: Client, message: Message):
         quote = True,
         disable_web_page_preview = True
     )
+
+'''
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
