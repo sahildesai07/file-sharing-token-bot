@@ -7,23 +7,42 @@ from pyrogram import filters
 from pyrogram.enums import ChatMemberStatus
 from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
-from pyrogram.errors import FloodWait
+from pyrogram.errors import FloodWait, UserNotParticipant, ChatAdminRequired
 
-async def is_subscribed(filter, client, update):
+async def is_subscribed(client, update):
     if not FORCE_SUB_CHANNEL:
         return True
+
     user_id = update.from_user.id
+
+    # Check if the user is an admin
     if user_id in ADMINS:
         return True
+
     try:
-        member = await client.get_chat_member(chat_id = FORCE_SUB_CHANNEL, user_id = user_id)
+        # Get the chat member status
+        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
     except UserNotParticipant:
+        # User is not a participant, check if join requests are enabled
+        try:
+            # Get join requests
+            join_requests = await client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
+            for request in join_requests:
+                if request.user.id == user_id:
+                    return True  # User has a pending join request
+            return False  # User does not have a pending join request
+        except ChatAdminRequired:
+            return False  # The bot lacks permissions to check join requests
+    except Exception as e:
+        print(f"Error checking membership: {e}")
         return False
 
-    if not member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-        return False
-    else:
+    # Check if the user is a member, admin, or owner
+    if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
         return True
+
+    return False
+
 
 async def encode(string):
     string_bytes = string.encode("ascii")
