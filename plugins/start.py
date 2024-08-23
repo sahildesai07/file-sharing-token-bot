@@ -67,7 +67,6 @@ async def decline_join_request(client: Client, callback_query: CallbackQuery):
     await client.decline_chat_join_request(chat_id=AUTH_CHANNEL, user_id=user_id)
     await callback_query.answer("Join request has been declined!", show_alert=True)
     
-"""
 async def is_subscribed(client: Client, user_id: int) -> bool:
     if not FORCE_SUB_CHANNEL:
         return True
@@ -78,7 +77,7 @@ async def is_subscribed(client: Client, user_id: int) -> bool:
     except UserNotParticipant:
         return False
     return member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
-"""
+
     
 @Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
