@@ -7,7 +7,7 @@ from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, User
 
 from bot import Bot
 from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT, FORCE_SUB_CHANNEL, REQ_JOIN
-from helper_func import subscribed, encode, decode, get_messages
+from helper_func import is_subscribed , subscribed, encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
@@ -108,7 +108,7 @@ async def not_joined(client: Client, message: Message):
     user_id = message.from_user.id
 
     # Check if the user is subscribed
-    if not await subscribed(client, message):
+    if not await is_subscribed(client, message):
         buttons = [
             [
                 InlineKeyboardButton("Join Channel", url=client.invitelink)
