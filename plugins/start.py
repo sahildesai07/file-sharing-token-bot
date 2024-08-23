@@ -29,31 +29,25 @@ async def is_subscribed(client: Client, update: Message):
 
     user_id = update.from_user.id
 
-    # Check if the user is an admin
-    if user_id in ADMINS:
-        return True
-
     try:
-        # Check if the user is a member of the chat
         member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
         if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
             return True
     except UserNotParticipant:
-        # User is not a participant, proceed with further checks
         pass
     except Exception as e:
         print(f"Error checking membership: {e}")
         return False
 
-    # Check for join requests
     try:
         async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL):
             if request.user.id == user_id:
-                return True  # User has a pending join request
+                return True
     except Exception as e:
         print(f"Error checking join requests: {e}")
 
     return False
+
 
 
 
