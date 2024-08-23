@@ -13,7 +13,7 @@ from database.database import add_user, del_user, full_userbase, present_user
 REQ_JOIN_LINK = "https://t.me/+hIpiAqAw7FBkZmZk"
 
 
-FORCE_MSG = "Please request to join our private channel using the link below:\n\n{link}"
+FORCE_MSG = "Please request to join our private channel using the link below:\n\nlink"
 START_MSG = "Welcome, {first} {last} {username}!"
 
 
