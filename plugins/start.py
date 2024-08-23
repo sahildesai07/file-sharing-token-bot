@@ -46,22 +46,6 @@ async def start_command(client: Client, message: Message):
     except RPCError as e:
         await message.reply(f"An error occurred: {e}")
 
-@Bot.on_callback_query(filters.regex("check_membership"))
-async def check_membership(client: Client, callback_query):
-    user_id = callback_query.from_user.id
-
-    try:
-        # Check if the user has joined the channel
-        memberStatus = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-        if memberStatus.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-            await callback_query.message.edit_text("Thanks for joining! You are now a member.")
-            # Run your intended logic here for members...
-        else:
-            await callback_query.answer("You haven't joined yet. Please join the channel first.", show_alert=True)
-
-    except RPCError as e:
-        await callback_query.message.edit_text(f"An error occurred: {e}")
-
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
