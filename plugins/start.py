@@ -8,7 +8,7 @@ import string
 import time
 
 from pyrogram import Client, filters, __version__
-from pyrogram.enums import ParseMode
+from pyrogram.enums import ParseMode #, ChatMemberStatus
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 
@@ -66,6 +66,8 @@ async def decline_join_request(client: Client, callback_query: CallbackQuery):
     # Decline the join request if the user is an admin
     await client.decline_chat_join_request(chat_id=AUTH_CHANNEL, user_id=user_id)
     await callback_query.answer("Join request has been declined!", show_alert=True)
+    
+"""
 async def is_subscribed(client: Client, user_id: int) -> bool:
     if not FORCE_SUB_CHANNEL:
         return True
@@ -76,6 +78,7 @@ async def is_subscribed(client: Client, user_id: int) -> bool:
     except UserNotParticipant:
         return False
     return member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
+"""
     
 @Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
