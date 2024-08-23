@@ -16,7 +16,7 @@ REQ_JOIN_LINK = "https://t.me/+hIpiAqAw7FBkZmZk"
 FORCE_MSG = "Please request to join our private channel using the link below:\n\nlink"
 START_MSG = "Welcome, {first} {last} {username}!"
 
-
+@Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
