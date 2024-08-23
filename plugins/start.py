@@ -17,7 +17,6 @@ FORCE_MSG = "Please request to join our private channel using the link below:\n\
 START_MSG = "Welcome, {first} {last} {username}!"
 
 
-@Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
@@ -27,13 +26,7 @@ async def start_command(client: Client, message: Message):
             await message.reply("Your join request is pending approval.")
             return
 
-    # Step 2: Check if the user is already a member
-    member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-    if member_status.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
-        await message.reply("Welcome back! You are already a member.")
-        return
-
-    # Step 3: Send the join link if the user is neither in pending nor a member
+    # Step 3: Send the join link if the user is neither in pending
     await message.reply(
         text="Please join the channel using the link below.",
         reply_markup=InlineKeyboardMarkup([
@@ -41,7 +34,7 @@ async def start_command(client: Client, message: Message):
         ]),
         quote=True
     )
-
+    
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
