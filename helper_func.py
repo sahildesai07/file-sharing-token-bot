@@ -9,7 +9,8 @@ from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait, UserNotParticipant, ChatAdminRequired
 
-async def is_subscribed(client, update):
+# Implement the is_subscribed function
+async def is_subscribed(client: Client, update: Message):
     if not FORCE_SUB_CHANNEL:
         return True
 
