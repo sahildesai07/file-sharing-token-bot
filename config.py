@@ -50,7 +50,8 @@ except ValueError:
         raise Exception("Your Admins list does not contain valid integers.")
 
 # In your config.py or at the top of your script
-REQ_JOIN = True  # or False, depending on your requirement
+# REQ_JOIN = True  # or False, depending on your requirement
+REQ_JOIN = os.environ.get("REQ_JOIN", True)
 
 #Force sub message 
 FORCE_MSG = os.environ.get("FORCE_SUB_MESSAGE", "Hello {first}\n\n<b>You need to join in my Channel/Group to use me\n\nKindly Please join Channel</b>")
