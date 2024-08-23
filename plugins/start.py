@@ -23,8 +23,7 @@ async def generate_join_request_link(client):
 # Check if the user has a pending join request
 async def is_join_request_pending(client, user_id):
     try:
-        join_requests = await client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
-        for request in join_requests:
+        async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL):
             if request.user.id == user_id:
                 return True
         return False
@@ -43,7 +42,7 @@ async def start_command(client: Client, message: Message):
                 await add_user(user_id)
             except Exception as e:
                 print(f"Error adding user: {e}")
-        
+
         text = message.text
         if len(text) > 7:
             try:
