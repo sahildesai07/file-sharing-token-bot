@@ -19,18 +19,18 @@ START_MSG = "Welcome, {first} {last} {username}!"
 
 @Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
-    user_id = message.from_user.id
+    id = message.from_user.id
     
     try:
         # Step 1: Check if the user's join request is pending using the 'query' parameter
-        async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL, query=str(user_id)):
-            if request.user.id == user_id:
+        async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL, query=str(id)):
+            if request.user.id == id:
                 await message.reply("Your join request is pending approval.")
                 return
 
         # Step 2: Check if the user is already a member
-        member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-        if member_status.status in ["member", "administrator", "creator"]:
+        memberStatus = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=id)
+        if memberStatus.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
             await message.reply("Welcome back! You are already a member.")
             return
 
@@ -52,8 +52,8 @@ async def check_membership(client: Client, callback_query):
 
     try:
         # Check if the user has joined the channel
-        member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-        if member_status.status in ["member", "administrator", "creator"]:
+        memberStatus = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        if memberStatus.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
             await callback_query.message.edit_text("Thanks for joining! You are now a member.")
             # Run your intended logic here for members...
         else:
