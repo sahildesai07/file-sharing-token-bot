@@ -1,4 +1,4 @@
-# PhdLust
+#(©)Codexbotz
 
 import asyncio
 from pyrogram import filters, Client

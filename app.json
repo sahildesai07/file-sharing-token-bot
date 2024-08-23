@@ -1,4 +1,3 @@
-
 {
   "name": "TG File Share/Sharing Bot",
   "description": "file sharing bot store posts and it can access by special links",
@@ -7,7 +6,7 @@
     "file",
     "sharing"
   ],
-  "repository": "https://github.com/sahildesai07/File-Sharing-Bot",
+  "repository": "https://github.com/CodeXBotz/File-Sharing-Bot",
   "logo": "https://ibb.co/FgPVtzw",
   "env": {
     "TG_BOT_TOKEN": {
@@ -23,28 +22,12 @@
       "value": ""
     },
     "DATABASE_URL": {
-      "description": "Paste your mongo db url https://youtu.be/qFB0cFqiyOM?si=9rfd9AawasXLp_oE",
+      "description": "Paste your mongo db url",
       "value": "url"
     },
     "DATABASE_NAME":{
       "description": "Enter your DATABASE_NAME ",
-      "value": "ultroidxTeam"
-    },
-    "SHORTLINK_URL":{
-      "description": "Enter your SHORTLINK_URL , add yr shortner url . ",
-      "value": "api.shareus.io"
-    },
-    "SHORTLINK_API":{
-      "description": "Enter yourSHORTLINK_API , add yr shortner api ",
-      "value": "710b7ed8fdc5f89e9036000cc10121921e7732f1"
-    },
-    "IS_VERIFY":{
-      "description": "True= (on)or False = (off) , value = True/False ",
-      "value": "True"
-    },
-    "VERIFY_EXPIRE":{
-      "description": "yr token timeout in seconds, 86400 = 24h",
-      "value": "86400"
+      "value": "filesharexbot"
     },
     "API_HASH":{
       "description": "your api hash, take it from my.telegram.org",
@@ -89,3 +72,4 @@
     }
   }
 }
+

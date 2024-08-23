@@ -1,5 +1,3 @@
-#ultroidxTeam (admin - TG )
-#import logging
 #(©)Codexbotz
 
 import base64
@@ -10,14 +8,6 @@ from pyrogram.enums import ChatMemberStatus
 from config import FORCE_SUB_CHANNEL, ADMINS
 from pyrogram.errors.exceptions.bad_request_400 import UserNotParticipant
 from pyrogram.errors import FloodWait
-from shortzy import Shortzy
-import requests
-import time
-from datetime import datetime
-from database.database import user_data, db_verify_status, db_update_verify_status
-
-#logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
 
 async def is_subscribed(filter, client, update):
     if not FORCE_SUB_CHANNEL:
@@ -93,33 +83,6 @@ async def get_message_id(client, message):
                 return msg_id
     else:
         return 0
-
-async def get_verify_status(user_id):
-    verify = await db_verify_status(user_id)
-    return verify
-
-async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link=""):
-    current = await db_verify_status(user_id)
-    current['verify_token'] = verify_token
-    current['is_verified'] = is_verified
-    current['verified_time'] = verified_time
-    current['link'] = link
-    await db_update_verify_status(user_id, current)
-
-
-async def get_shortlink(url, api, link):
-    shortzy = Shortzy(api_key=api, base_site=url)
-    link = await shortzy.convert(link)
-    return link
-
-def get_exp_time(seconds):
-    periods = [('days', 86400), ('hours', 3600), ('mins', 60), ('secs', 1)]
-    result = ''
-    for period_name, period_seconds in periods:
-        if seconds >= period_seconds:
-            period_value, seconds = divmod(seconds, period_seconds)
-            result += f'{int(period_value)}{period_name}'
-    return result
 
 
 def get_readable_time(seconds: int) -> str:
