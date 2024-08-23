@@ -33,7 +33,7 @@ async def is_join_request_pending(client, user_id):
         return False
 
 # Start command logic if the user’s join request is pending
-@app.on_message(filters.command('start') & filters.private)
+@Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
 
