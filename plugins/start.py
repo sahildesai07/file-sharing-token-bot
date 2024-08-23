@@ -22,12 +22,11 @@ async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
     try:
-        # Step 1: Check if the user's join request is pending
-        pending_requests = client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
-        async for request in pending_requests:
-            if request.user.id == user_id:
-                await message.reply("Your join request is pending approval.")
-                return
+        # Step 1: Check if the user's join request is pending using the 'query' parameter
+        pending_requests = await client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL, query=str(user_id))
+        if pending_requests:
+            await message.reply("Your join request is pending approval.")
+            return
 
         # Step 2: Check if the user is already a member
         member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
@@ -62,6 +61,7 @@ async def check_membership(client: Client, callback_query):
 
     except RPCError as e:
         await callback_query.message.edit_text(f"An error occurred: {e}")
+
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
