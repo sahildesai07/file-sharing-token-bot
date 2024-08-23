@@ -43,23 +43,75 @@ collection = db["userrequests"]
 
 bot = Bot()
 
-@Bot.on_message(filters.command('start') & filters.private & subscribed)
+@Bot.on_callback_query(filters.regex('approve_join_request'))
+async def approve_join_request(client: Client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    # Check if the user is an admin in the AUTH_CHANNEL
+    member = await client.get_chat_member(chat_id=AUTH_CHANNEL, user_id=user_id)
+    if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+        await callback_query.answer("You don't have permission to approve join requests.", show_alert=True)
+        return
+    
+    # Approve the join request if the user is an admin
+    await client.approve_chat_join_request(chat_id=AUTH_CHANNEL, user_id=user_id)
+    await callback_query.answer("Join request has been approved!", show_alert=True)
+
+@Bot.on_callback_query(filters.regex('decline_join_request'))
+async def decline_join_request(client: Client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    
+    # Check if the user is an admin in the AUTH_CHANNEL
+    member = await client.get_chat_member(chat_id=AUTH_CHANNEL, user_id=user_id)
+    if member.status not in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR]:
+        await callback_query.answer("You don't have permission to decline join requests.", show_alert=True)
+        return
+    
+    # Decline the join request if the user is an admin
+    await client.decline_chat_join_request(chat_id=AUTH_CHANNEL, user_id=user_id)
+    await callback_query.answer("Join request has been declined!", show_alert=True)
+async def is_subscribed(client: Client, user_id: int) -> bool:
+    if not FORCE_SUB_CHANNEL:
+        return True
+    if user_id in ADMINS:
+        return True
+    try:
+        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+    except UserNotParticipant:
+        return False
+    return member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
+    
+@Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
-    id = message.from_user.id
-    owner_id = ADMINS  # Fetch the owner's ID from config
-
-    # Check if the user is the owner
-    if id == owner_id:
-        # Owner-specific actions
-        # You can add any additional actions specific to the owner here
-        await message.reply("You are the owner! Additional actions can be added here.")
-
-    else:
-        if not await present_user(id):
-            try:
-                await add_user(id)
-            except:
-                pass
+    user_id = message.from_user.id
+    
+    # Check if the user is subscribed
+    if not await is_subscribed(client, user_id):
+        if req_join:  # Handle join request mode
+            invite_link = await client.create_chat_invite_link(chat_id=AUTH_CHANNEL, creates_join_request=True)
+            await message.reply(
+                text="Please join the channel to use this bot.",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Request to Join Channel", url=invite_link.invite_link)]
+                ]),
+                quote=True
+            )
+        else:  # Normal force join mode
+            invite_link = await client.export_chat_invite_link(chat_id=FORCE_SUB_CHANNEL)
+            await message.reply(
+                text=FORCE_MSG.format(
+                    first=message.from_user.first_name,
+                    last=message.from_user.last_name,
+                    username=None if not message.from_user.username else '@' + message.from_user.username,
+                    mention=message.from_user.mention,
+                    id=message.from_user.id
+                ),
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("Join Channel", url=invite_link)]
+                ]),
+                quote=True
+            )
+        return
 
         verify_status = await get_verify_status(id)
         if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
