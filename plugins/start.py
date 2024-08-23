@@ -16,25 +16,134 @@ REQ_JOIN_LINK = "https://t.me/+hIpiAqAw7FBkZmZk"
 FORCE_MSG = "Please request to join our private channel using the link below:\n\nlink"
 START_MSG = "Welcome, {first} {last} {username}!"
 
-@Bot.on_message(filters.command('start') & filters.private)
+@Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
-    user_id = message.from_user.id
-    
-    # Step 1: Check if the user's join request is pending using the 'query' parameter
-    async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL, query=str(user_id)):
-        if request.user.id == user_id:
-            await message.reply("Your join request is pending approval.")
+    id = message.from_user.id
+    if not await present_user(id):
+        try:
+            await add_user(id)
+        except:
+            pass
+    text = message.text
+    if len(text) > 7:
+        try:
+            base64_string = text.split(" ", 1)[1]
+        except:
             return
+        string = await decode(base64_string)
+        argument = string.split("-")
+        if len(argument) == 3:
+            try:
+                start = int(int(argument[1]) / abs(client.db_channel.id))
+                end = int(int(argument[2]) / abs(client.db_channel.id))
+            except:
+                return
+            if start <= end:
+                ids = range(start, end + 1)
+            else:
+                ids = []
+                i = start
+                while True:
+                    ids.append(i)
+                    i -= 1
+                    if i < end:
+                        break
+        elif len(argument) == 2:
+            try:
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+            except:
+                return
+        temp_msg = await message.reply("Please wait...")
+        try:
+            messages = await get_messages(client, ids)
+        except:
+            await message.reply_text("Something went wrong..!")
+            return
+        await temp_msg.delete()
 
-    # Step 3: Send the join link if the user is neither in pending
+        for msg in messages:
+            if bool(CUSTOM_CAPTION) & bool(msg.document):
+                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
+            else:
+                caption = "" if not msg.caption else msg.caption.html
+
+            if DISABLE_CHANNEL_BUTTON:
+                reply_markup = msg.reply_markup
+            else:
+                reply_markup = None
+
+            try:
+                await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                await asyncio.sleep(0.5)
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+                await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+            except:
+                pass
+        return
+    else:
+        reply_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("😊 About Me", callback_data="about"),
+                    InlineKeyboardButton("🔒 Close", callback_data="close")
+                ]
+            ]
+        )
+        await message.reply_text(
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
+            ),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
+        )
+        return
+
+#=====================================================================================##
+
+WAIT_MSG = """<b>Processing ...</b>"""
+
+REPLY_ERROR = """<code>Use this command as a reply to any telegram message without any spaces.</code>"""
+
+#=====================================================================================##
+
+@Bot.on_message(filters.command('start') & filters.private)
+async def not_joined(client: Client, message: Message):
+    # Create buttons for joining the channel and trying again
+    buttons = [
+        [
+            InlineKeyboardButton(
+                "Join Channel",
+                url=client.invitelink
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text='Try Again',
+                url=f"https://t.me/{client.username}?start={message.text.split(' ', 1)[1] if len(message.text.split(' ', 1)) > 1 else ''}"
+            )
+        ]
+    ]
+
     await message.reply(
-        text="Please join the channel using the link below.",
-        reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)]
-        ]),
-        quote=True
+        text=FORCE_MSG.format(
+            first=message.from_user.first_name,
+            last=message.from_user.last_name,
+            username=None if not message.from_user.username else '@' + message.from_user.username,
+            mention=message.from_user.mention,
+            id=message.from_user.id
+        ),
+        reply_markup=InlineKeyboardMarkup(buttons),
+        quote=True,
+        disable_web_page_preview=True
     )
-    
+
+
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
