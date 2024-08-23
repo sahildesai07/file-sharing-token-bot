@@ -1,7 +1,7 @@
 import os
 import asyncio
 from pyrogram import Client, filters, __version__
-from pyrogram.enums import ParseMode
+from pyrogram.enums import ParseMode , ChatMemberStatus
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, UserNotParticipant
 
@@ -54,12 +54,12 @@ async def start_command(client: Client, message: Message):
             except Exception as e:
                 await message.reply_text("Something went wrong..!")
                 print(f"Error getting messages: {e}")
-        return
+        return  # Ensure this return is inside the correct block
 
     # Subscription check
     try:
         member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=id)
-        is_member = member.status in ["member", "administrator", "creator"]
+        is_member = member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]
     except UserNotParticipant:
         is_member = False
     except Exception as e:
@@ -122,6 +122,7 @@ async def start_command(client: Client, message: Message):
         disable_web_page_preview=True,
         quote=True
     )
+
 
 WAIT_MSG = "<b>Processing ...</b>"
 REPLY_ERROR = "<code>Use this command as a reply to any telegram message without any spaces.</code>"
