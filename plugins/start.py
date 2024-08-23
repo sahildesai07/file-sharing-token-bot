@@ -7,7 +7,7 @@ from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated, User
 
 from bot import Bot
 from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT, FORCE_SUB_CHANNEL, REQ_JOIN
-from helper_func import is_subscribed , subscribed, encode, decode, get_messages
+from helper_func import encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
@@ -111,7 +111,7 @@ async def not_joined(client: Client, message: Message):
     if not await is_subscribed(client, message):
         buttons = [
             [
-                InlineKeyboardButton("Join Channel", url=client.invitelink)
+                InlineKeyboardButton("Join Channel", url=await generate_join_request_link(client))
             ]
         ]
         try:
@@ -155,6 +155,54 @@ async def not_joined(client: Client, message: Message):
             disable_web_page_preview=True,
             quote=True
         )
+
+# Function to generate a request-to-join link
+async def generate_join_request_link(client: Client):
+    try:
+        invite_link = await client.create_chat_invite_link(
+            chat_id=FORCE_SUB_CHANNEL,
+            creates_join_request=True
+        )
+        return invite_link.invite_link
+    except Exception as e:
+        print(f"Error creating join request link: {e}")
+        return None
+
+# Implement the is_subscribed function
+async def is_subscribed(client: Client, update: Message):
+    if not FORCE_SUB_CHANNEL:
+        return True
+
+    user_id = update.from_user.id
+
+    # Check if the user is an admin
+    if user_id in ADMINS:
+        return True
+
+    try:
+        # Get the chat member status
+        member = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+    except UserNotParticipant:
+        # User is not a participant, check if join requests are enabled
+        try:
+            # Get join requests
+            join_requests = await client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
+            for request in join_requests:
+                if request.user.id == user_id:
+                    return True  # User has a pending join request
+            return False  # User does not have a pending join request
+        except ChatAdminRequired:
+            return False  # The bot lacks permissions to check join requests
+    except Exception as e:
+        print(f"Error checking membership: {e}")
+        return False
+
+    # Check if the user is a member, admin, or owner
+    if member.status in [ChatMemberStatus.OWNER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.MEMBER]:
+        return True
+
+    return False
+
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
