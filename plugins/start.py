@@ -23,8 +23,7 @@ async def generate_join_request_link(client: Client):
         print(f"Error creating join request link: {e}")
         return None
 
-# Implement the is_subscribed function
-async def is_subscribed(filter, client, update):
+async def is_subscribed(client: Client, update: Message):
     if not FORCE_SUB_CHANNEL:
         return True
 
@@ -40,9 +39,7 @@ async def is_subscribed(filter, client, update):
     except UserNotParticipant:
         # User is not a participant, check if join requests are enabled
         try:
-            # Get join requests
-            join_requests = await client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
-            for request in join_requests:
+            async for request in client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL):
                 if request.user.id == user_id:
                     return True  # User has a pending join request
             return False  # User does not have a pending join request
@@ -57,6 +54,7 @@ async def is_subscribed(filter, client, update):
         return True
 
     return False
+
 
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
@@ -204,7 +202,6 @@ async def not_joined(client: Client, message: Message):
             disable_web_page_preview=True,
             quote=True
         )
-
 
 
 
