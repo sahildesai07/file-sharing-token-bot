@@ -37,11 +37,6 @@ from database.database import add_user, del_user, full_userbase, present_user
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize the MongoDB client
-client = MongoClient(DATABASE_URL)
-db = client["telegrambotdb"]
-collection = db["userrequests"]
-
 bot = Bot()
 
 @Bot.on_callback_query(filters.regex('approve_join_request'))
