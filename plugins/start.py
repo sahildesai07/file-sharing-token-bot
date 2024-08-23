@@ -10,6 +10,8 @@ from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL
 from helper_func import encode, decode, get_messages, subscribed
 from database.database import add_user, del_user, full_userbase, present_user
 
+REQ_JOIN_LINK = "https://t.me/+hIpiAqAw7FBkZmZk"
+
 
 FORCE_MSG = "Please request to join our private channel using the link below:\n\n{link}"
 START_MSG = "Welcome, {first} {last} {username}!"
@@ -20,110 +22,28 @@ async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
     try:
-        # Step 1: Check if the user is already a member of the channel
-        try:
-            member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-            if member_status.status in ["member", "administrator", "creator"]:
-                # User is already a member
-                if not await present_user(user_id):
-                    try:
-                        await add_user(user_id)
-                    except Exception as e:
-                        print(f"Error adding user to the database: {e}")
-                
-                # Proceed with the bot's main functionality
-                text = message.text
-                if len(text) > 7:
-                    try:
-                        base64_string = text.split(" ", 1)[1]
-                    except IndexError:
-                        return
+        # Step 1: Check if the user's join request is pending
+        pending_requests = client.get_chat_join_requests(chat_id=FORCE_SUB_CHANNEL)
+        async for request in pending_requests:
+            if request.user.id == user_id:
+                await message.reply("Your join request is pending approval.")
+                return
 
-                    # Assuming decode and get_messages are defined elsewhere
-                    string = await decode(base64_string)
-                    argument = string.split("-")
-                    if len(argument) == 3:
-                        try:
-                            start = int(int(argument[1]) / abs(client.db_channel.id))
-                            end = int(int(argument[2]) / abs(client.db_channel.id))
-                        except ValueError:
-                            return
-                        
-                        ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
-                    elif len(argument) == 2:
-                        try:
-                            ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                        except ValueError:
-                            return
+        # Step 2: Check if the user is already a member
+        member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        if member_status.status in ["member", "administrator", "creator"]:
+            await message.reply("Welcome back! You are already a member.")
+            return
 
-                    temp_msg = await message.reply("Please wait...")
-                    try:
-                        messages = await get_messages(client, ids)
-                    except Exception as e:
-                        await message.reply_text("Something went wrong..!")
-                        return
-                    
-                    await temp_msg.delete()
+        # Step 3: Send the join link if the user is neither in pending nor a member
+        await message.reply(
+            text="Please join the channel using the link below.",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)]
+            ]),
+            quote=True
+        )
 
-                    for msg in messages:
-                        caption = CUSTOM_CAPTION.format(
-                            previouscaption="" if not msg.caption else msg.caption.html,
-                            filename=msg.document.file_name
-                        ) if bool(CUSTOM_CAPTION) and bool(msg.document) else (msg.caption.html if msg.caption else "")
-                        reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
-
-                        try:
-                            await msg.copy(
-                                chat_id=message.from_user.id,
-                                caption=caption,
-                                parse_mode="html",
-                                reply_markup=reply_markup,
-                                protect_content=PROTECT_CONTENT
-                            )
-                            await asyncio.sleep(0.5)
-                        except FloodWait as e:
-                            await asyncio.sleep(e.x)
-                            await msg.copy(
-                                chat_id=message.from_user.id,
-                                caption=caption,
-                                parse_mode="html",
-                                reply_markup=reply_markup,
-                                protect_content=PROTECT_CONTENT
-                            )
-                        except Exception as e:
-                            print(f"Error copying message: {e}")
-                else:
-                    reply_markup = InlineKeyboardMarkup([
-                        [
-                            InlineKeyboardButton("😊 About Me", callback_data="about"),
-                            InlineKeyboardButton("🔒 Close", callback_data="close")
-                        ]
-                    ])
-                    await message.reply_text(
-                        text=START_MSG.format(
-                            first=message.from_user.first_name,
-                            last=message.from_user.last_name,
-                            username=None if not message.from_user.username else '@' + message.from_user.username,
-                            mention=message.from_user.mention,
-                            id=message.from_user.id
-                        ),
-                        reply_markup=reply_markup,
-                        disable_web_page_preview=True,
-                        quote=True
-                    )
-        except UserNotParticipant:
-            # User is not a member; prompt them to join the channel
-            join_link = await client.create_chat_invite_link(chat_id=FORCE_SUB_CHANNEL)
-            buttons = [
-                [InlineKeyboardButton("Join Channel", url=join_link.invite_link)],
-                [InlineKeyboardButton("I've Joined", callback_data="check_membership")]
-            ]
-            await message.reply(
-                text=FORCE_MSG.format(link=join_link.invite_link),
-                reply_markup=InlineKeyboardMarkup(buttons),
-                quote=True
-            )
-    
     except RPCError as e:
         await message.reply(f"An error occurred: {e}")
 
@@ -132,21 +52,14 @@ async def check_membership(client: Client, callback_query):
     user_id = callback_query.from_user.id
 
     try:
-        # Verify if the user has joined the channel
+        # Check if the user has joined the channel
         member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
         if member_status.status in ["member", "administrator", "creator"]:
-            # Add the user to the bot's database if not already present
-            if not await present_user(user_id):
-                try:
-                    await add_user(user_id)
-                except Exception as e:
-                    print(f"Error adding user to the database: {e}")
-            await callback_query.message.edit_text("Thank you for joining! You now have access to the bot's features.")
-            # Proceed with the bot's main functionality if needed
+            await callback_query.message.edit_text("Thanks for joining! You are now a member.")
+            # Run your intended logic here for members...
         else:
-            await callback_query.answer("You haven't joined the channel yet. Please join to continue.", show_alert=True)
-    except UserNotParticipant:
-        await callback_query.answer("You haven't joined the channel yet. Please join to continue.", show_alert=True)
+            await callback_query.answer("You haven't joined yet. Please join the channel first.", show_alert=True)
+
     except RPCError as e:
         await callback_query.message.edit_text(f"An error occurred: {e}")
 
