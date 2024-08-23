@@ -22,6 +22,7 @@ from config import (
     CUSTOM_CAPTION,
     IS_VERIFY,
     VERIFY_EXPIRE,
+    REQ_JOIN,
     SHORTLINK_API,
     SHORTLINK_URL,
     DISABLE_CHANNEL_BUTTON,
@@ -84,10 +85,10 @@ async def is_subscribed(client: Client, user_id: int) -> bool:
 @Bot.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
-    
+
     # Check if the user is subscribed
     if not await is_subscribed(client, user_id):
-        if req_join:  # Handle join request mode
+        if REQ_JOIN:  # Handle join request mode
             invite_link = await client.create_chat_invite_link(chat_id=AUTH_CHANNEL, creates_join_request=True)
             await message.reply(
                 text="Please join the channel to use this bot.",
@@ -112,6 +113,9 @@ async def start_command(client: Client, message: Message):
                 quote=True
             )
         return
+
+    # Other functionalities after checking subscription and verification status
+
 
         verify_status = await get_verify_status(id)
         if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
