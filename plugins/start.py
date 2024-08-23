@@ -108,7 +108,7 @@ async def not_joined(client: Client, message: Message):
     user_id = message.from_user.id
 
     # Check if the user is subscribed
-    if not await is_subscribed(client, message):
+    if not await subscribed(client, message):
         buttons = [
             [
                 InlineKeyboardButton("Join Channel", url=client.invitelink)
