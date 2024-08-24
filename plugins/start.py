@@ -16,7 +16,7 @@ REQ_JOIN_LINK = 'https://t.me/+CtzZboehkKBmNmFk'  # Replace with your channel jo
 # MongoDB setup
 MONGO_URL = 'mongodb+srv://Cluster0:Cluster0@cluster0.c07xkuf.mongodb.net/?retryWrites=true&w=majority'
 mongo_client = MongoClient(MONGO_URL)
-db = mongo_client['yosggeame']  # Replace with your database name
+db = mongo_client['yoseame']  # Replace with your database name
 collection = db['join_requests']  # Replace with your collection name
 
 #Bot = Client("my_bot")
@@ -64,7 +64,14 @@ async def start_command(client: Client, message: Message):
             base64_string = text.split(" ", 1)[1]
         except IndexError:
             return
-        string = await decode(base64_string)
+
+        try:
+            string = await decode(base64_string)
+        except Exception as e:
+            print(f"Error decoding parameter: {e}")
+            await message.reply("Failed to process your request. Please try again.")
+            return
+
         argument = string.split("-")
         if len(argument) == 3:
             try:
@@ -153,8 +160,12 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
                 )
                 return
         except RPCError as e:
-            print(f"Error checking member status: {e}")
-            pass
+            # This handles the case where the user is not a member
+            if "USER_NOT_PARTICIPANT" in str(e):
+                pass
+            else:
+                print(f"Error checking member status: {e}")
+                await client.send_message(chat_id=user_id, text="An error occurred while checking your membership status.")
 
         # Check MongoDB if the user has a pending request
         existing_request = collection.find_one({"user_id": user_id, "chat_id": FORCE_SUB_CHANNEL})
@@ -169,10 +180,9 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
         # Send the join link if the user is neither in pending nor a member
         await client.send_message(
             chat_id=user_id,
-            text="You need to join the channel to use this bot.",
+            text="Please join the channel using the link below.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)],
-                [InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")]
+                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)]
             ])
         )
         print(f"Sent join link to user {user_id}.")
@@ -185,11 +195,10 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
         print(f"An error occurred: {e}")
         await client.send_message(chat_id=user_id, text=f"An error occurred: {e}")
 
-
 # Additional functionality for handling broadcasts and user management
 @Client.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Client, message: Message):
-    msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
+    msg = await client.send_message(chat_id=message.chat.id, text="Fetching user count...")
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
 
