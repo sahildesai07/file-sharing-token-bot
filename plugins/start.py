@@ -19,7 +19,7 @@ mongo_client = MongoClient(MONGO_URL)
 db = mongo_client['yose_name']  # Replace with your database name
 collection = db['join_requests']  # Replace with your collection name
 
-Bot = Client("my_bot")
+#Bot = Client("my_bot")
 
 async def check_subscription_status(client: Client, user_id: int):
     try:
@@ -235,4 +235,4 @@ Unsuccessful: <code>{unsuccessful}</code></b>"""
         msg = await message.reply(REPLY_ERROR)
         await asyncio.sleep(8)
         await msg.delete()
-Bot.run()
+#Bot.run()
