@@ -16,7 +16,7 @@ REQ_JOIN_LINK = 'https://t.me/+CtzZboehkKBmNmFk'  # Replace with your channel jo
 # MongoDB setup
 MONGO_URL = 'mongodb+srv://Cluster0:Cluster0@cluster0.c07xkuf.mongodb.net/?retryWrites=true&w=majority'
 mongo_client = MongoClient(MONGO_URL)
-db = mongo_client['yoseame']  # Replace with your database name
+db = mongo_client['yosggeame']  # Replace with your database name
 collection = db['join_requests']  # Replace with your collection name
 
 #Bot = Client("my_bot")
