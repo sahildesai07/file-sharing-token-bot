@@ -41,32 +41,30 @@ async def check_subscription_status(client: Client, user_id: int):
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
 
-    # Extract parameter from the /start command if present
-    text = message.text
-    parameter = None
-    if len(text) > 7:
-        try:
-            base64_string = text.split(" ", 1)[1]
-            parameter = base64_string  # Store the parameter for retrying
-        except IndexError:
-            return
-
-    # Check subscription status and handle as before
     if not await check_subscription_status(client, user_id):
-        try_again_url = f"https://t.me/{client.username}?start={parameter}"
         await message.reply(
             text="You need to join the channel to use this bot.",
             reply_markup=InlineKeyboardMarkup([
                 [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)],
-                [InlineKeyboardButton("Try Again", url=try_again_url)]
+                [InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.text.split()[1] if len(message.text.split()) > 1 else ''}")]
             ]),
             quote=True
         )
         return
 
-    # Handle the command parameter if present
-    if parameter:
-        string = await decode(parameter)
+    if not await present_user(user_id):
+        try:
+            await add_user(user_id)
+        except Exception as e:
+            print(f"Error adding user to database: {e}")
+
+    text = message.text
+    if len(text) > 7:
+        try:
+            base64_string = text.split(" ", 1)[1]
+        except IndexError:
+            return
+        string = await decode(base64_string)
         argument = string.split("-")
         if len(argument) == 3:
             try:
@@ -87,8 +85,6 @@ async def start_command(client: Client, message: Message):
         temp_msg = await message.reply("Please wait...")
         try:
             messages = await get_messages(client, ids)
-            # Store the user request
-            USER_REQUESTS[user_id] = (parameter, messages)
         except Exception:
             await message.reply_text("Something went wrong..!")
             return
@@ -134,7 +130,6 @@ async def start_command(client: Client, message: Message):
         )
         return
 
-
 @Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
 async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest):
     user_id = chat_join_request.from_user.id  # Use from_user instead of user
@@ -174,9 +169,10 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
         # Send the join link if the user is neither in pending nor a member
         await client.send_message(
             chat_id=user_id,
-            text="Please join the channel using the link below.",
+            text="You need to join the channel to use this bot.",
             reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)]
+                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)],
+                [InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")]
             ])
         )
         print(f"Sent join link to user {user_id}.")
