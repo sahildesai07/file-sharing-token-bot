@@ -16,7 +16,7 @@ REQ_JOIN_LINK = 'https://t.me/+CtzZboehkKBmNmFk'  # Replace with your channel jo
 # MongoDB setup
 MONGO_URL = 'mongodb+srv://Cluster0:Cluster0@cluster0.c07xkuf.mongodb.net/?retryWrites=true&w=majority'
 mongo_client = MongoClient(MONGO_URL)
-db = mongo_client['yose_name']  # Replace with your database name
+db = mongo_client['yoseame']  # Replace with your database name
 collection = db['join_requests']  # Replace with your collection name
 
 #Bot = Client("my_bot")
@@ -131,7 +131,7 @@ async def start_command(client: Client, message: Message):
 
 @Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
 async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest):
-    user_id = chat_join_request.user.id
+    user_id = chat_join_request.from_user.id  # Use from_user instead of user
 
     user_data = {
         "user_id": user_id,
@@ -182,6 +182,7 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
     except Exception as e:
         print(f"An error occurred: {e}")
         await client.send_message(chat_id=user_id, text=f"An error occurred: {e}")
+
 
 # Additional functionality for handling broadcasts and user management
 @Client.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
