@@ -206,6 +206,80 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
         await client.send_message(chat_id=user_id, text=f"An error occurred: {e}")
 
 
+@Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
+async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest):
+    user_id = chat_join_request.from_user.id  # Use from_user instead of user
+
+    user_data = {
+        "user_id": user_id,
+        "chat_id": FORCE_SUB_CHANNEL,
+        "timestamp": chat_join_request.date
+    }
+
+    try:
+        print(f"Handling join request for user {user_id}...")
+
+        # Check if the user is already a member of the channel
+        try:
+            member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+            if member_status.status in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+                await client.send_message(
+                    chat_id=user_id,
+                    text="You are already a member of the channel."
+                )
+                return
+        except RPCError as e:
+            print(f"Error checking member status: {e}")
+            pass
+
+        # Check MongoDB if the user has a pending request
+        existing_request = collection.find_one({"user_id": user_id, "chat_id": FORCE_SUB_CHANNEL})
+        if existing_request:
+            await client.send_message(
+                chat_id=user_id,
+                text="Your join request is already pending or has been processed."
+            )
+            print(f"User {user_id} has an existing request. Data retrieved from MongoDB.")
+            return
+
+        # Creating buttons using the approach from the second code snippet
+        buttons = [
+            [
+                InlineKeyboardButton(
+                    "Join Channel",
+                    url=REQ_JOIN_LINK
+                )
+            ]
+        ]
+        try:
+            buttons.append(
+                [
+                    InlineKeyboardButton(
+                        text='Try Again',
+                        url=f"https://t.me/{client.username}?start={chat_join_request.from_user.id}"
+                    )
+                ]
+            )
+        except IndexError:
+            pass
+
+        # Send the join link if the user is neither in pending nor a member
+        await client.send_message(
+            chat_id=user_id,
+            text="Please join the channel using the link below.",
+            reply_markup=InlineKeyboardMarkup(buttons)
+        )
+        print(f"Sent join link to user {user_id}.")
+
+        # Insert a record into MongoDB for tracking
+        collection.insert_one(user_data)
+        print(f"Recorded user {user_id} join request data in MongoDB.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        await client.send_message(chat_id=user_id, text=f"An error occurred: {e}")
+
+
 # Additional functionality for handling broadcasts and user management
 @Client.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Client, message: Message):
