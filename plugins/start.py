@@ -11,6 +11,7 @@ from database.database import add_user, del_user, full_userbase, present_user
 
 # Define your channel username or ID and join link
 FORCE_SUB_CHANNEL = -1002192839022  # Replace with your channel ID
+FORCE_SUB_CHANNEL2 = -1002043373014
 REQ_JOIN_LINK = 'https://t.me/+jAhHR5pR-Uk4ZDU1'   # Replace with your channel join link
 REQ_JOIN_LINK2 = 'https://t.me/+CtzZboehkKBmNmFk'
 
