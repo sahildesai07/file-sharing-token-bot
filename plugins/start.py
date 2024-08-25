@@ -24,43 +24,29 @@ collection = db['join_requests']  # Replace with your collection name
 
 async def check_subscription_status(client: Client, user_id: int):
     try:
-        # Check if the user is a member of the channel
         member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
         if member_status.status in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
             return True
     except RPCError:
         pass
 
-    # Check MongoDB if the user has a pending request
     existing_request = collection.find_one({"user_id": user_id, "chat_id": FORCE_SUB_CHANNEL})
     if existing_request:
         return True
 
     return False
 
+
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
 
     if not await check_subscription_status(client, user_id):
-        # Creating buttons using the approach from the second code snippet
         buttons = [
-            [
-                InlineKeyboardButton(
-                    "Join Channel",
-                    url=REQ_JOIN_LINK
-                )
-            ]
+            [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)],
         ]
         try:
-            buttons.append(
-                [
-                    InlineKeyboardButton(
-                        text='Try Again',
-                        url=f"https://t.me/{client.username}?start={message.command[1]}"
-                    )
-                ]
-            )
+            buttons.append([InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")])
         except IndexError:
             pass
 
@@ -78,29 +64,21 @@ async def start_command(client: Client, message: Message):
         except Exception as e:
             print(f"Error adding user to database: {e}")
 
-    text = message.text
-    if len(text) > 7:
+    if len(message.text) > 7:
         try:
-            base64_string = text.split(" ", 1)[1]
-        except IndexError:
-            return
-        string = await decode(base64_string)
-        argument = string.split("-")
-        if len(argument) == 3:
-            try:
+            base64_string = message.text.split(" ", 1)[1]
+            string = await decode(base64_string)
+            argument = string.split("-")
+            if len(argument) == 3:
                 start = int(int(argument[1]) / abs(client.db_channel.id))
                 end = int(int(argument[2]) / abs(client.db_channel.id))
-            except ValueError:
-                return
-            if start <= end:
-                ids = range(start, end + 1)
-            else:
-                ids = list(range(start, end - 1, -1))
-        elif len(argument) == 2:
-            try:
+                ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
+            elif len(argument) == 2:
                 ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-            except ValueError:
+            else:
                 return
+        except (IndexError, ValueError):
+            return
 
         temp_msg = await message.reply("Please wait...")
         try:
@@ -111,10 +89,8 @@ async def start_command(client: Client, message: Message):
         await temp_msg.delete()
 
         for msg in messages:
-            if bool(CUSTOM_CAPTION) & bool(msg.document):
-                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
-            else:
-                caption = "" if not msg.caption else msg.caption.html
+            caption = (CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
+                       if bool(CUSTOM_CAPTION) & bool(msg.document) else "" if not msg.caption else msg.caption.html)
 
             reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
@@ -127,33 +103,27 @@ async def start_command(client: Client, message: Message):
             except Exception:
                 pass
         return
-    else:
-        reply_markup = InlineKeyboardMarkup(
-            [
-                [
-                    InlineKeyboardButton("😊 About Me", callback_data="about"),
-                    InlineKeyboardButton("🔒 Close", callback_data="close")
-                ]
-            ]
-        )
-        await message.reply_text(
-            text=START_MSG.format(
-                first=message.from_user.first_name,
-                last=message.from_user.last_name,
-                username=None if not message.from_user.username else '@' + message.from_user.username,
-                mention=message.from_user.mention,
-                id=message.from_user.id
-            ),
-            reply_markup=reply_markup,
-            disable_web_page_preview=True,
-            quote=True
-        )
-        return
+
+    reply_markup = InlineKeyboardMarkup([
+        [InlineKeyboardButton("😊 About Me", callback_data="about"), InlineKeyboardButton("🔒 Close", callback_data="close")]
+    ])
+    await message.reply_text(
+        text=START_MSG.format(
+            first=message.from_user.first_name,
+            last=message.from_user.last_name,
+            username=None if not message.from_user.username else '@' + message.from_user.username,
+            mention=message.from_user.mention,
+            id=message.from_user.id
+        ),
+        reply_markup=reply_markup,
+        disable_web_page_preview=True,
+        quote=True
+    )
 
 
 @Client.on_chat_join_request(filters.chat(FORCE_SUB_CHANNEL))
-async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest , message: Message):
-    user_id = chat_join_request.from_user.id  # Use from_user instead of user
+async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest):
+    user_id = chat_join_request.from_user.id
 
     user_data = {
         "user_id": user_id,
@@ -162,49 +132,30 @@ async def handle_join_request(client: Client, chat_join_request: ChatJoinRequest
     }
 
     try:
-        print(f"Handling join request for user {user_id}...")
-
-        # Check if the user is already a member of the channel
-        try:
-            member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
-            if member_status.status in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
-                await client.send_message(
-                    chat_id=user_id,
-                    text="You are already a member of the channel."
-                )
-                return
-        except RPCError as e:
-            print(f"Error checking member status: {e}")
-            pass
-
-        # Check MongoDB if the user has a pending request
-        existing_request = collection.find_one({"user_id": user_id, "chat_id": FORCE_SUB_CHANNEL})
-        if existing_request:
-            await client.send_message(
-                chat_id=user_id,
-                text="Your join request is already pending or has been processed."
-            )
-            print(f"User {user_id} has an existing request. Data retrieved from MongoDB.")
+        member_status = await client.get_chat_member(chat_id=FORCE_SUB_CHANNEL, user_id=user_id)
+        if member_status.status in [ChatMemberStatus.MEMBER, ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:
+            await client.send_message(chat_id=user_id, text="You are already a member of the channel.")
             return
 
-        # Send the join link if the user is neither in pending nor a member
-        await client.send_message(
-            chat_id=user_id,
-            text="Please join the channel using the link below.",
-            reply_markup=InlineKeyboardMarkup([
-                [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)],
-                [InlineKeyboardButton("Try Again", url=f"https://t.me/{client.username}?start={message.command[1]}")]
-            ])
-        )
-        print(f"Sent join link to user {user_id}.")
+    except RPCError as e:
+        print(f"Error checking member status: {e}")
+        pass
 
-        # Insert a record into MongoDB for tracking
-        collection.insert_one(user_data)
-        print(f"Recorded user {user_id} join request data in MongoDB.")
+    existing_request = collection.find_one({"user_id": user_id, "chat_id": FORCE_SUB_CHANNEL})
+    if existing_request:
+        await client.send_message(chat_id=user_id, text="Your join request is already pending or has been processed.")
+        return
 
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        await client.send_message(chat_id=user_id, text=f"An error occurred: {e}")
+    await client.send_message(
+        chat_id=user_id,
+        text="Please join the channel using the link below.",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("Join Channel", url=REQ_JOIN_LINK)],
+        ])
+    )
+    collection.insert_one(user_data)
+    print(f"Recorded user {user_id} join request data in MongoDB.")
+
 
 
 # Additional functionality for handling broadcasts and user management
