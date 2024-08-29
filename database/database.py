@@ -29,11 +29,12 @@ def new_user(id):
 async def present_user(user_id: int):
     found = await user_data.find_one({'_id': user_id})
     return bool(found)
-
+"""
 async def add_user(user_id: int):
     user = new_user(user_id)
     await user_data.insert_one(user)
     return
+"""
 
 async def db_verify_status(user_id):
     user = await user_data.find_one({'_id': user_id})
@@ -80,3 +81,26 @@ async def decrement_credits(user_id: int, amount: int):
         new_credits = max(current_credits - amount, 0)
         await update_credits(user_id, new_credits)
     return
+
+from pymongo import MongoClient
+
+# MongoDB setup
+#client = MongoClient("mongodb+srv://Cluster0:Cluster0@cluster0.c07xkuf.mongodb.net/?retryWrites=true&w=majority")
+#db = client.bot_database
+#users_collection = db.users
+
+async def add_user(user_id):
+    users_collection.update_one({'_id': user_id}, {'$set': {'credits': 0}}, upsert=True)
+
+async def get_user_credits(user_id):
+    user = users_collection.find_one({'_id': user_id})
+    if user:
+        return user.get('credits', 0)
+    return 0
+
+async def update_user_credits(user_id, amount):
+    users_collection.update_one({'_id': user_id}, {'$inc': {'credits': amount}}, upsert=True)
+
+async def add_user_credits(user_id, amount):
+    await update_user_credits(user_id, amount)
+
