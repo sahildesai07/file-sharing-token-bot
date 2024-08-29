@@ -9,7 +9,7 @@ client = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
 db = client[DB_NAME]
 users_collection = db['users']
 
-dbclient = pymongo.MongoClient(DB_URL)
+dbclient = pymongo.MongoClient(DB_URI)
 database = dbclient[DB_NAME]
 
 
