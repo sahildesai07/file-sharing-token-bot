@@ -1,3 +1,5 @@
+
+import pymongo, os
 import motor.motor_asyncio
 import time
 from config import DB_URI, DB_NAME
