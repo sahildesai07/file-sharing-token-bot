@@ -1,176 +1,185 @@
 import asyncio
-import time
+import base64
+import logging
+import os
 import random
+import re
 import string
+import time
 
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.errors import FloodWait
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 
 from bot import Bot
-from config import *
-from helper_func import subscribed, encode, decode, get_messages, get_shortlink
-from database.database import (
-    add_user,
-    present_user,
-    get_verify_status,
-    update_verify_status,
-    decrement_user_limit,
-    get_user_limit,
-    reset_user_limits
+from config import (
+    ADMINS,
+    FORCE_MSG,
+    START_MSG,
+    CUSTOM_CAPTION,
+    IS_VERIFY,
+    VERIFY_EXPIRE,
+    SHORTLINK_API,
+    SHORTLINK_URL,
+    DISABLE_CHANNEL_BUTTON,
+    PROTECT_CONTENT,
+    TUT_VID,
+    OWNER_ID,
+    CREDIT_LIMIT,  # Add credit limit config
 )
-
-# Function to delete messages after a delay
-async def delete_message_after_delay(message: Message, delay: int = 600):
-    await asyncio.sleep(delay)
-    await message.delete()
+from helper_func import (
+    subscribed, encode, decode, get_messages, get_shortlink,
+    get_verify_status, update_verify_status, get_exp_time
+)
+from database.database import (
+    add_user, del_user, full_userbase, present_user, 
+    update_credits, get_credits  # Add functions to manage credits
+)
+from shortzy import Shortzy
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
-    owner_id = int(OWNER_ID)  # Fetch the owner's ID from config
 
-    # Check if the user is the owner
-    if id == owner_id:
-        await message.reply("You are the owner! Unlimited access granted.")
-    else:
-        if not await present_user(id):
+    # Check and update user's credits
+    credits = await get_credits(id)
+    if credits <= 0:
+        await message.reply("You have no credits left. Please verify your token to get more credits.")
+        return
+
+    # Deduct credit for using the bot
+    await update_credits(id, credits - 1)
+
+    owner_id = ADMINS  # Fetch the owner's ID from config
+
+    if not await present_user(id):
+        try:
+            await add_user(id)
+        except:
+            pass
+
+    verify_status = await get_verify_status(id)
+    if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
+        await update_verify_status(id, is_verified=False)
+
+    if "verify_" in message.text:
+        _, token = message.text.split("_", 1)
+        if verify_status['verify_token'] != token:
+            return await message.reply("Your token is invalid or expired. Try again by clicking /start")
+        await update_verify_status(id, is_verified=True, verified_time=time.time())
+        await update_credits(id, CREDIT_LIMIT)  # Restore credits upon successful verification
+        reply_markup = None
+        await message.reply(f"Your token was successfully verified and valid for 24 hours. You have been given {CREDIT_LIMIT} credits.", reply_markup=reply_markup, protect_content=False, quote=True)
+
+    elif len(message.text) > 7 and verify_status['is_verified']:
+        try:
+            base64_string = message.text.split(" ", 1)[1]
+        except:
+            return
+        _string = await decode(base64_string)
+        argument = _string.split("-")
+        if len(argument) == 3:
             try:
-                await add_user(id)
+                start = int(int(argument[1]) / abs(client.db_channel.id))
+                end = int(int(argument[2]) / abs(client.db_channel.id))
+            except:
+                return
+            if start <= end:
+                ids = range(start, end + 1)
+            else:
+                ids = []
+                i = start
+                while True:
+                    ids.append(i)
+                    i -= 1
+                    if i < end:
+                        break
+        elif len(argument) == 2:
+            try:
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+            except:
+                return
+        temp_msg = await message.reply("Please wait...")
+        try:
+            messages = await get_messages(client, ids)
+        except:
+            await message.reply_text("Something went wrong..!")
+            return
+        await temp_msg.delete()
+
+        snt_msgs = []
+
+        for msg in messages:
+            if bool(CUSTOM_CAPTION) & bool(msg.document):
+                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
+            else:
+                caption = "" if not msg.caption else msg.caption.html
+
+            if DISABLE_CHANNEL_BUTTON:
+                reply_markup = msg.reply_markup
+            else:
+                reply_markup = None
+
+            try:
+                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                # Schedule auto-delete
+                asyncio.create_task(auto_delete_message(snt_msg.id, client))
+                await asyncio.sleep(0.5)
+                snt_msgs.append(snt_msg)
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+                snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                asyncio.create_task(auto_delete_message(snt_msg.id, client))
+                snt_msgs.append(snt_msg)
             except:
                 pass
 
+    elif verify_status['is_verified']:
+        reply_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("About Me", callback_data="about"),
+              InlineKeyboardButton("Close", callback_data="close")]]
+        )
+        await message.reply_text(
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
+            ),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
+        )
+
+    else:
         verify_status = await get_verify_status(id)
-
-        if not verify_status['is_verified']:
-            if IS_VERIFY:
-                token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                await update_verify_status(id, verify_token=token, link="")
-                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
-                btn = [
-                    [InlineKeyboardButton("Click here to Continue", url=link)],
-                    [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)]
-                ]
-                await message.reply(
-                    "Your access token has expired. Please verify your token to continue.\n\nWhat is the token?\n\nThis is a verification token. Pass the verification to get access.",
-                    reply_markup=InlineKeyboardMarkup(btn),
-                    protect_content=False,
-                    quote=True
-                )
-                return
+        if IS_VERIFY and not verify_status['is_verified']:
+            short_url = f"adrinolinks.in"
+            token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            await update_verify_status(id, verify_token=token, link="")
+            link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
+            btn = [
+                [InlineKeyboardButton("Click here", url=link)],
+                [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
+            ]
+            await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
 
 
-        # Check user limit
-        user_limit = await get_user_limit(id)
-        if user_limit <= 0:
-            await message.reply("You've reached your usage limit. Please verify your token to get more access.")
-            return
+# Function to auto-delete a message after 10 minutes
+async def auto_delete_message(message_id, client):
+    await asyncio.sleep(600)  # Wait for 10 minutes
+    try:
+        await client.delete_messages(chat_id=client.get_me().id, message_ids=message_id)
+    except:
+        pass
 
-        if len(message.text) > 7:
-            try:
-                base64_string = message.text.split(" ", 1)[1]
-            except:
-                return
-            _string = await decode(base64_string)
-            argument = _string.split("-")
-
-            if len(argument) == 3:
-                try:
-                    start = int(int(argument[1]) / abs(client.db_channel.id))
-                    end = int(int(argument[2]) / abs(client.db_channel.id))
-                except:
-                    return
-                if start <= end:
-                    ids = range(start, end + 1)
-                else:
-                    ids = []
-                    i = start
-                    while True:
-                        ids.append(i)
-                        i -= 1
-                        if i < end:
-                            break
-            elif len(argument) == 2:
-                try:
-                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                except:
-                    return
-
-            temp_msg = await message.reply("Please wait...")
-            try:
-                messages = await get_messages(client, ids)
-            except:
-                await message.reply_text("Something went wrong..!")
-                return
-            await temp_msg.delete()
-
-            for msg in messages:
-                if bool(CUSTOM_CAPTION) & bool(msg.document):
-                    caption = CUSTOM_CAPTION.format(
-                        previouscaption="" if not msg.caption else msg.caption.html,
-                        filename=msg.document.file_name
-                    )
-                else:
-                    caption = "" if not msg.caption else msg.caption.html
-
-                if DISABLE_CHANNEL_BUTTON:
-                    reply_markup = msg.reply_markup
-                else:
-                    reply_markup = None
-
-                try:
-                    snt_msg = await msg.copy(
-                        chat_id=message.from_user.id,
-                        caption=caption,
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=reply_markup,
-                        protect_content=PROTECT_CONTENT
-                    )
-                    await asyncio.sleep(0.5)
-                    asyncio.create_task(delete_message_after_delay(snt_msg))
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    snt_msg = await msg.copy(
-                        chat_id=message.from_user.id,
-                        caption=caption,
-                        parse_mode=ParseMode.HTML,
-                        reply_markup=reply_markup,
-                        protect_content=PROTECT_CONTENT
-                    )
-                    asyncio.create_task(delete_message_after_delay(snt_msg))
-                except:
-                    pass
-
-            # Decrement user limit after successfully sending files
-            await decrement_user_limit(id)
-
-        else:
-            reply_markup = InlineKeyboardMarkup(
-                [
-                    [
-                        InlineKeyboardButton("😊 About Me", callback_data="about"),
-                        InlineKeyboardButton("🔒 Close", callback_data="close")
-                    ]
-                ]
-            )
-            await message.reply_text(
-                text=START_MSG.format(
-                    first=message.from_user.first_name,
-                    last=message.from_user.last_name,
-                    username=None if not message.from_user.username else '@' + message.from_user.username,
-                    mention=message.from_user.mention,
-                    id=message.from_user.id
-                ),
-                reply_markup=reply_markup,
-                disable_web_page_preview=True,
-                quote=True
-            )
 #=====================================================================================##
 
 WAIT_MSG = """"<b>Processing ...</b>"""
 
-REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
+REPLY_ERROR = """<code>Use this command as a reply to any telegram message without any spaces.</code>"""
 
 #=====================================================================================##
 
