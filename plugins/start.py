@@ -9,18 +9,7 @@ from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait
 
 from bot import Bot
-from config import (
-    ADMINS,
-    FORCE_MSG,
-    START_MSG,
-    CUSTOM_CAPTION,
-    IS_VERIFY,
-    DISABLE_CHANNEL_BUTTON,
-    PROTECT_CONTENT,
-    TUT_VID,
-    OWNER_ID,
-    USER_LIMIT
-)
+from config import *
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink
 from database.database import (
     add_user,
