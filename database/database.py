@@ -1,47 +1,32 @@
-import pymongo
+
 from config import DB_URI, DB_NAME
+from pymongo import MongoClient
 
-dbclient = pymongo.MongoClient(DB_URI)
-database = dbclient[DB_NAME]
+client = MongoClient(DB_URI)
+db = client[DB_NAME]
+users = db["users"]
 
-user_data = database['users']
+async def add_user(id):
+    users.insert_one({"_id": id, "limit": 10, "is_verified": False, "verify_token": "", "verified_time": 0})
 
-# Check if user exists
-async def present_user(user_id: int):
-    found = user_data.find_one({'_id': user_id})
-    return bool(found)
+async def update_user_limit(id, limit):
+    users.update_one({"_id": id}, {"$set": {"limit": limit}})
 
-# Add a new user with an initial usage count of 0
-async def add_user(user_id: int):
-    user_data.insert_one({'_id': user_id, 'usage_count': 0})
-    return
+async def get_user_limit(id):
+    user = users.find_one({"_id": id})
+    return user.get("limit", 0) if user else 0
 
-# Get the full list of users
-async def full_userbase():
-    user_docs = user_data.find()
-    user_ids = []
-    for doc in user_docs:
-        user_ids.append(doc['_id'])
-    return user_ids
+async def get_verify_status(id):
+    user = users.find_one({"_id": id})
+    return user if user else {"is_verified": False, "verify_token": "", "verified_time": 0}
 
-# Delete a user
-async def del_user(user_id: int):
-    user_data.delete_one({'_id': user_id})
-    return
+async def update_verify_status(id, is_verified=None, verify_token=None, verified_time=None):
+    update_fields = {}
+    if is_verified is not None:
+        update_fields["is_verified"] = is_verified
+    if verify_token is not None:
+        update_fields["verify_token"] = verify_token
+    if verified_time is not None:
+        update_fields["verified_time"] = verified_time
 
-# Get the current usage count for a user
-async def get_usage_count(user_id: int):
-    user = user_data.find_one({'_id': user_id})
-    if user and 'usage_count' in user:
-        return user['usage_count']
-    return 0
-
-# Increment the usage count for a user
-async def increment_usage_count(user_id: int):
-    user_data.update_one({'_id': user_id}, {'$inc': {'usage_count': 1}})
-    return
-
-# Reset the usage count for a user
-async def reset_usage_count(user_id: int):
-    user_data.update_one({'_id': user_id}, {'$set': {'usage_count': 0}})
-    return
+    users.update_one({"_id": id}, {"$set": update_fields})
