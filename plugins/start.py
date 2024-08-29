@@ -1,15 +1,14 @@
 import asyncio
-import base64
 import logging
-import os
 import random
-import re
 import string
 import time
+
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
+
 from bot import Bot
 from config import (
     ADMINS,
@@ -24,54 +23,71 @@ from config import (
     PROTECT_CONTENT,
     TUT_VID,
     OWNER_ID,
-    CREDIT_AMOUNT,
-    TOKEN_VERIFICATION
+    TOKEN_VERIFICATION,
+    CREDITS_REQUIRED,
+    CREDIT_LINK
 )
-from helper_func import (
-    subscribed, encode, decode, get_messages, get_shortlink,
-    get_verify_status, update_verify_status, get_exp_time
-)
+from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
 from database.database import (
-    add_user, del_user, full_userbase, present_user, 
-    get_credits, update_credits, decrement_credits, increment_credits, db_verify_status, db_update_verify_status
+    add_user, del_user, full_userbase, present_user, db_verify_status, db_update_verify_status,
+    db_get_credits, db_decrement_credits, db_add_credits
 )
-from shortzy import Shortzy
 
-# Initialize logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+"""
+async def auto_delete_message(message_id, chat_id):
+    await asyncio.sleep(600)  # 10 minutes
+    try:
+        await Bot.delete_messages(chat_id, message_id)
+    except Exception as e:
+        logger.error(f"Failed to delete message: {e}")
+
+async def decrement_credits(user_id):
+    # Decrement credits in the database
+    await db_decrement_credits(user_id)
+"""
+
+async def provide_credits_link(message: Message):
+    link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, CREDIT_LINK)
+    await message.reply(
+        f"Your credits have finished. Please use the following link to get more credits:\n{link}",
+        disable_web_page_preview=True,
+        quote=True
+    )
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
     owner_id = ADMINS  # Fetch the owner's ID from config
 
-    credits = await get_credits(id)
-    if credits <= 0:
-        if TOKEN_VERIFICATION:  # If token verification is required
-            verify_status = await get_verify_status(id)
-            if verify_status['is_verified']:
-                await message.reply("Your credits have run out. Please verify your token to get more credits.")
-                return
-
     if not await present_user(id):
         try:
             await add_user(id)
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to add user: {e}")
 
-    verify_status = await get_verify_status(id)
+    verify_status = await db_verify_status(id)
+    credits = await db_get_credits(id)  # Check user's credits
+
+    if credits <= 0:
+        await provide_credits_link(message)
+        return
+
     if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-        await update_verify_status(id, is_verified=False)
+        await db_update_verify_status(id, is_verified=False)
 
     if "verify_" in message.text:
         _, token = message.text.split("_", 1)
         if verify_status['verify_token'] != token:
             return await message.reply("Your token is invalid or expired. Try again by clicking /start")
-        await update_verify_status(id, is_verified=True, verified_time=time.time())
-        await message.reply("Your token is successfully verified and valid for 24 hours.")
-        return
+        await db_update_verify_status(id, is_verified=True, verified_time=time.time())
+        if verify_status["link"] == "":
+            reply_markup = None
+        await message.reply(f"Your token has been successfully verified and is valid for: 24 Hours", reply_markup=reply_markup, protect_content=False, quote=True)
 
-    if len(message.text) > 7 and verify_status['is_verified']:
+    elif len(message.text) > 7 and verify_status['is_verified']:
         try:
             base64_string = message.text.split(" ", 1)[1]
         except:
@@ -84,12 +100,22 @@ async def start_command(client: Client, message: Message):
                 end = int(int(argument[2]) / abs(client.db_channel.id))
             except:
                 return
-            ids = range(start, end + 1) if start <= end else []
+            if start <= end:
+                ids = range(start, end + 1)
+            else:
+                ids = []
+                i = start
+                while True:
+                    ids.append(i)
+                    i -= 1
+                    if i < end:
+                        break
         elif len(argument) == 2:
             try:
                 ids = [int(int(argument[1]) / abs(client.db_channel.id))]
             except:
                 return
+
         temp_msg = await message.reply("Please wait...")
         try:
             messages = await get_messages(client, ids)
@@ -99,6 +125,7 @@ async def start_command(client: Client, message: Message):
         await temp_msg.delete()
 
         snt_msgs = []
+
         for msg in messages:
             if bool(CUSTOM_CAPTION) & bool(msg.document):
                 caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
@@ -114,17 +141,17 @@ async def start_command(client: Client, message: Message):
                 snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                 await asyncio.sleep(0.5)
                 snt_msgs.append(snt_msg)
-                await decrement_credits(id, 1)  # Deduct 1 credit per file sent
+                asyncio.create_task(auto_delete_message(snt_msg.message_id, snt_msg.chat.id))
+                await decrement_credits(id)
             except FloodWait as e:
                 await asyncio.sleep(e.x)
                 snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                 snt_msgs.append(snt_msg)
-            except:
+                asyncio.create_task(auto_delete_message(snt_msg.message_id, snt_msg.chat.id))
+                await decrement_credits(id)
+            except Exception as e:
+                logger.error(f"Failed to send message: {e}")
                 pass
-
-        # Schedule auto-delete
-        for msg in snt_msgs:
-            asyncio.create_task(auto_delete_message(client, msg.message_id, 600))  # 600 seconds = 10 minutes
 
     elif verify_status['is_verified']:
         reply_markup = InlineKeyboardMarkup(
@@ -145,17 +172,31 @@ async def start_command(client: Client, message: Message):
         )
 
     else:
-        verify_status = await get_verify_status(id)
+        verify_status = await db_verify_status(id)
         if IS_VERIFY and not verify_status['is_verified']:
-            short_url = f"api.shareus.io"
+            short_url = f"adrinolinks.in"
             token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-            await update_verify_status(id, verify_token=token, link="")
+            await db_update_verify_status(id, verify_token=token, link="")
             link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
             btn = [
                 [InlineKeyboardButton("Click here", url=link)],
                 [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
             ]
-            await message.reply(f"Your Ads token is expired. Refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+            await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+
+@Bot.on_message(filters.command('credit') & filters.private)
+async def credit_command(client: Client, message: Message):
+    id = message.from_user.id
+    credits = await db_get_credits(id)
+
+    if credits is not None:
+        await message.reply(
+            f"Your current credit balance is: {credits} credits.\n\nIf you need more credits, use the following link to purchase or earn more:\n{CREDIT_LINK}",
+            disable_web_page_preview=True,
+            quote=True
+        )
+    else:
+        await message.reply("An error occurred while retrieving your credit information. Please try again later.", quote=True)
 
 async def auto_delete_message(client: Client, message_id: int, delay: int):
     await asyncio.sleep(delay)
