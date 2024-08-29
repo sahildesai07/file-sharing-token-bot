@@ -46,19 +46,20 @@ async def start_command(client: Client, message: Message):
         if not verify_status['is_verified']:
             if IS_VERIFY:
                 token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                await update_verify_status(id, verify_token=token)
-                link = await get_shortlink(f'https://telegram.dog/{client.username}?start=verify_{token}')
+                await update_verify_status(user_id, verify_token=token, link="")
+                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
                 btn = [
                     [InlineKeyboardButton("Click here to Continue", url=link)],
                     [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)]
                 ]
                 await message.reply(
-                    f"Your access token has expired. Please verify your token to continue.\n\nWhat is the token?\n\nThis is a verification token. Pass the verification to get access.",
+                    "Your access token has expired. Please verify your token to continue.\n\nWhat is the token?\n\nThis is a verification token. Pass the verification to get access.",
                     reply_markup=InlineKeyboardMarkup(btn),
                     protect_content=False,
                     quote=True
                 )
                 return
+
 
         # Check user limit
         user_limit = await get_user_limit(id)
@@ -265,3 +266,22 @@ Unsuccessful: <code>{unsuccessful}</code></b>"""
         msg = await message.reply(REPLY_ERROR)
         await asyncio.sleep(8)
         await msg.delete()
+
+
+@Bot.on_message(filters.command('credit') & filters.private)
+async def credit_command(client: Client, message: Message):
+    user_id = message.from_user.id
+
+    if user_id == int(OWNER_ID):
+        await message.reply("You have unlimited access.")
+        return
+
+    if not await present_user(user_id):
+        await message.reply("You are not registered. Please start the bot to register.")
+        return
+
+    user_limit = await get_user_limit(user_id)
+    if user_limit <= 0:
+        await message.reply("You've reached your usage limit. Please verify your token to get more access.")
+    else:
+        await message.reply(f"Your remaining limit is: {user_limit}")
