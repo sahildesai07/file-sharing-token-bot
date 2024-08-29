@@ -11,6 +11,8 @@ from pyrogram.errors import FloodWait
 from bot import Bot
 from config import *
 from helper_func import *
+# from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
+#from database.database import add_user, del_user, full_userbase, present_user
 from database.database import (
     add_user,
     present_user,
@@ -20,6 +22,9 @@ from database.database import (
     get_user_limit,
     reset_user_limits
 )
+
+from shortzy import Shortzy
+
 # Auto-delete function to delete messages after a specific time
 async def auto_delete_messages(client, messages, delay=600):
     await asyncio.sleep(delay)
