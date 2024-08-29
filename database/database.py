@@ -24,6 +24,16 @@ async def present_user(user_id):
     user = user_data.find_one({"_id": user_id})
     return user is not None
 
+async def db_verify_status(user_id):
+    user = await user_data.find_one({'_id': user_id})
+    if user:
+        return user.get('verify_status', default_verify)
+    return default_verify
+
+async def db_update_verify_status(user_id, verify):
+    await user_data.update_one({'_id': user_id}, {'$set': {'verify_status': verify}})
+
+
 # Function to get user's verification status and limits
 async def get_verify_status(user_id):
     user = user_data.find_one({"_id": user_id})
