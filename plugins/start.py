@@ -11,8 +11,15 @@ from pyrogram.errors import FloodWait
 from bot import Bot
 from config import *
 from helper_func import *
-from database.database import add_user, present_user, update_user_limit, get_user_limit 
-
+from database.database import (
+    add_user,
+    present_user,
+    get_verify_status,
+    update_verify_status,
+    decrement_user_limit,
+    get_user_limit,
+    reset_user_limits
+)
 # Auto-delete function to delete messages after a specific time
 async def auto_delete_messages(client, messages, delay=600):
     await asyncio.sleep(delay)
