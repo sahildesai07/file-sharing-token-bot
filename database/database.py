@@ -1,4 +1,3 @@
-
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
 
@@ -14,15 +13,17 @@ default_verify = {
     'link': ""
 }
 
+default_user = {
+    '_id': None,
+    'verify_status': default_verify,
+    'credits': 0  # Default credit amount
+}
+
 def new_user(id):
     return {
         '_id': id,
-        'verify_status': {
-            'is_verified': False,
-            'verified_time': "",
-            'verify_token': "",
-            'link': ""
-        }
+        'verify_status': default_verify,
+        'credits': 0  # Default credit amount
     }
 
 async def present_user(user_id: int):
@@ -50,4 +51,32 @@ async def full_userbase():
 
 async def del_user(user_id: int):
     await user_data.delete_one({'_id': user_id})
+    return
+
+# Credit management functions
+
+async def get_credits(user_id: int):
+    user = await user_data.find_one({'_id': user_id})
+    if user:
+        return user.get('credits', 0)
+    return 0
+
+async def update_credits(user_id: int, new_credits: int):
+    await user_data.update_one({'_id': user_id}, {'$set': {'credits': new_credits}})
+    return
+
+async def increment_credits(user_id: int, amount: int):
+    user = await user_data.find_one({'_id': user_id})
+    if user:
+        current_credits = user.get('credits', 0)
+        new_credits = current_credits + amount
+        await update_credits(user_id, new_credits)
+    return
+
+async def decrement_credits(user_id: int, amount: int):
+    user = await user_data.find_one({'_id': user_id})
+    if user:
+        current_credits = user.get('credits', 0)
+        new_credits = max(current_credits - amount, 0)
+        await update_credits(user_id, new_credits)
     return
