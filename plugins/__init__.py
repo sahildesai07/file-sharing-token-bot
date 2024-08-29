@@ -1,10 +1,3 @@
-#(©)Codexbotz
-#@iryme
-
-
-
-
-
 from aiohttp import web
 from .route import routes
 
