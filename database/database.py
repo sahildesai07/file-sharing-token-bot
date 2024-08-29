@@ -9,6 +9,28 @@ users = db["users"]
 async def add_user(id):
     users.insert_one({"_id": id, "limit": 10, "is_verified": False, "verify_token": "", "verified_time": 0})
 
+async def present_user(user_id: int):
+    found = await user_data.find_one({'_id': user_id})
+    return bool(found)
+
+async def db_verify_status(user_id):
+    user = await user_data.find_one({'_id': user_id})
+    if user:
+        return user.get('verify_status', default_verify)
+    return default_verify
+
+async def db_update_verify_status(user_id, verify):
+    await user_data.update_one({'_id': user_id}, {'$set': {'verify_status': verify}})
+
+async def full_userbase():
+    user_docs = user_data.find()
+    user_ids = [doc['_id'] async for doc in user_docs]
+    return user_ids
+
+async def del_user(user_id: int):
+    await user_data.delete_one({'_id': user_id})
+    return
+
 async def update_user_limit(id, limit):
     users.update_one({"_id": id}, {"$set": {"limit": limit}})
 
