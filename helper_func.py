@@ -104,7 +104,7 @@ async def update_verify_status(user_id, verify_token="", is_verified=False, veri
     current['verified_time'] = verified_time
     current['link'] = link
     await db_update_verify_status(user_id, current)
-
+"""
 def get_shortlink(api_url: str, api_key: str, long_url: str) -> str:
     response = requests.post(
         api_url,
@@ -120,7 +120,7 @@ async def get_shortlink(url, api, link):
     shortzy = Shortzy(api_key=api, base_site=url)
     link = await shortzy.convert(link)
     return link
-"""
+
 def get_exp_time(seconds):
     periods = [('days', 86400), ('hours', 3600), ('mins', 60), ('secs', 1)]
     result = ''
