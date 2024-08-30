@@ -32,132 +32,197 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
-@Bot.on_message(filters.command('start') & filters.private & subscribed)
+client = MongoClient(DB_URI)
+db = client[DB_NAME]
+user_collection = db['users']
+token_collection = db['tokens']
+
+# Define limits
+START_COMMAND_LIMIT = 15  # Default limit for new users
+LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
+
+# Utility function to check if the user exists in the database
+async def present_user(user_id):
+    return user_collection.find_one({"_id": user_id})
+
+# Utility function to add a new user with the default limit
+async def add_user(user_id):
+    user_collection.insert_one({
+        "_id": user_id,
+        "limit": START_COMMAND_LIMIT
+    })
+
+# Utility function to get the user's current limit
+async def get_user_limit(user_id):
+    user_data = await present_user(user_id)
+    if user_data:
+        return user_data['limit']
+    return START_COMMAND_LIMIT
+
+# Utility function to update the user's limit
+async def update_user_limit(user_id, new_limit):
+    user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
+
+# Utility function to generate a random token for verification
+def generate_token():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+
+# Main start command handler
+@Client.on_message(filters.command('start') & filters.private & filters.text)
 async def start_command(client: Client, message: Message):
-    id = message.from_user.id
-    owner_id = ADMINS  # Fetch the owner's ID from config
+    user_id = message.from_user.id
+    
+    # Check if user exists in the database; if not, add them
+    if not await present_user(user_id):
+        await add_user(user_id)
 
-    # Check if the user is the owner
-    if id == owner_id:
-        # Owner-specific actions
-        # You can add any additional actions specific to the owner here
-        await message.reply("You are the owner! Additional actions can be added here.")
+    # Get the user's current limit
+    user_limit = await get_user_limit(user_id)
+    
+    # If the user has no limit left, prompt them to increase it
+    if user_limit <= 0:
+        await message.reply_text("Your limit has been reached. Use /limit to increase your limit.")
+        return
 
-    else:
-        if not await present_user(id):
+    # Decrease the user's limit by 1 each time they use the /start command
+    await update_user_limit(user_id, user_limit - 1)
+
+    text = message.text
+    if len(text) > 7:
+        try:
+            # Decode the base64 string to retrieve the original arguments
+            base64_string = text.split(" ", 1)[1]
+        except:
+            return
+
+        string = await decode(base64_string)
+        argument = string.split("-")
+        
+        # Determine the range of message IDs to retrieve
+        if len(argument) == 3:
             try:
-                await add_user(id)
+                start = int(int(argument[1]) / abs(client.db_channel.id))
+                end = int(int(argument[2]) / abs(client.db_channel.id))
+            except:
+                return
+
+            ids = range(start, end + 1) if start <= end else range(end, start + 1)
+        elif len(argument) == 2:
+            try:
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+            except:
+                return
+
+        # Send a temporary "Please wait..." message while fetching the original messages
+        temp_msg = await message.reply("Please wait...")
+        try:
+            messages = await get_messages(client, ids)
+        except:
+            await message.reply_text("Something went wrong..!")
+            return
+
+        await temp_msg.delete()
+
+        for msg in messages:
+            # Customize the caption if needed
+            if bool(CUSTOM_CAPTION) & bool(msg.document):
+                caption = CUSTOM_CAPTION.format(
+                    previouscaption="" if not msg.caption else msg.caption.html,
+                    filename=msg.document.file_name
+                )
+            else:
+                caption = "" if not msg.caption else msg.caption.html
+
+            reply_markup = msg.reply_markup if DISABLE_CHANNEL_BUTTON else None
+
+            try:
+                # Copy the message to the user's chat
+                await msg.copy(
+                    chat_id=message.from_user.id,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                    protect_content=PROTECT_CONTENT
+                )
+                await asyncio.sleep(0.5)  # Prevent hitting rate limits
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+                await msg.copy(
+                    chat_id=message.from_user.id,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                    protect_content=PROTECT_CONTENT
+                )
             except:
                 pass
-
-        verify_status = await get_verify_status(id)
-        if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-            await update_verify_status(id, is_verified=False)
-
-        if "verify_" in message.text:
-            _, token = message.text.split("_", 1)
-            if verify_status['verify_token'] != token:
-                return await message.reply("Your token is invalid or Expired. Try again by clicking /start")
-            await update_verify_status(id, is_verified=True, verified_time=time.time())
-            if verify_status["link"] == "":
-                reply_markup = None
-            await message.reply(f"Your token successfully verified and valid for: {get_exp_time(VERIFY_EXPIRE)}", reply_markup=reply_markup, protect_content=False, quote=True)
-
-        elif len(message.text) > 7 and verify_status['is_verified']:
-            try:
-                base64_string = message.text.split(" ", 1)[1]
-            except:
-                return
-            _string = await decode(base64_string)
-            argument = _string.split("-")
-            if len(argument) == 3:
-                try:
-                    start = int(int(argument[1]) / abs(client.db_channel.id))
-                    end = int(int(argument[2]) / abs(client.db_channel.id))
-                except:
-                    return
-                if start <= end:
-                    ids = range(start, end+1)
-                else:
-                    ids = []
-                    i = start
-                    while True:
-                        ids.append(i)
-                        i -= 1
-                        if i < end:
-                            break
-            elif len(argument) == 2:
-                try:
-                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                except:
-                    return
-            temp_msg = await message.reply("Please wait...")
-            try:
-                messages = await get_messages(client, ids)
-            except:
-                await message.reply_text("Something went wrong..!")
-                return
-            await temp_msg.delete()
-            
-            snt_msgs = []
-            
-            for msg in messages:
-                if bool(CUSTOM_CAPTION) & bool(msg.document):
-                    caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
-                else:
-                    caption = "" if not msg.caption else msg.caption.html
-
-                if DISABLE_CHANNEL_BUTTON:
-                    reply_markup = msg.reply_markup
-                else:
-                    reply_markup = None
-
-                try:
-                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    await asyncio.sleep(0.5)
-                    snt_msgs.append(snt_msg)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    snt_msgs.append(snt_msg)
-                except:
-                    pass
-
-        elif verify_status['is_verified']:
-            reply_markup = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("About Me 🥵 ", callback_data="about"),
-                  InlineKeyboardButton("Close", callback_data="close")]]
-            )
-            await message.reply_text(
-                text=START_MSG.format(
-                    first=message.from_user.first_name,
-                    last=message.from_user.last_name,
-                    username=None if not message.from_user.username else '@' + message.from_user.username,
-                    mention=message.from_user.mention,
-                    id=message.from_user.id
-                ),
-                reply_markup=reply_markup,
-                disable_web_page_preview=True,
-                quote=True
-            )
-
-        else:
-            verify_status = await get_verify_status(id)
-            if IS_VERIFY and not verify_status['is_verified']:
-                short_url = f"inshorturl.com"
-                # TUT_VID = f"https://t.me/ultroid_official/18"
-                token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                await update_verify_status(id, verify_token=token, link="")
-                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
-                btn = [
-                    [InlineKeyboardButton("Click here to Continue", url=link)],
-                    [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
-                    [InlineKeyboardButtom(text = 'Try Again', url = f"https://t.me/{client.username}?start={message.command[1]}")]
+        return
+    else:
+        # Default response if the /start command is used without arguments
+        reply_markup = InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("😊 About Me", callback_data="about"),
+                    InlineKeyboardButton("🔒 Close", callback_data="close")
                 ]
-                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+            ]
+        )
+        await message.reply_text(
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
+            ),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
+        )
+        return
 
+# Limit command handler to generate and store a verification token
+@Client.on_message(filters.command('limit') & filters.private)
+async def limit_command(client: Client, message: Message):
+    user_id = message.from_user.id
+    user_limit = await get_user_limit(user_id)
 
-    
+    # Generate a verification link using a random token
+    token = generate_token()
+    verification_link = f"https://telegram.dog/{client.username}?start=limit_{token}"
+
+    # Store the token in the database with the user_id for later verification
+    token_collection.insert_one({
+        "user_id": user_id,
+        "token": token,
+        "used": False  # To track if the token has already been used
+    })
+
+    await message.reply_text(f"Your current limit is {user_limit}. You can increase your limit by using the link below:\n{verification_link}")
+
+# Token verification handler to increase the user's limit
+@Client.on_message(filters.regex(r'^/start limit_(\w+)$') & filters.private)
+async def verify_token_command(client: Client, message: Message):
+    user_id = message.from_user.id
+    token = message.text.split('limit_')[1]
+
+    # Check if the token is valid and hasn't been used
+    token_data = token_collection.find_one({"user_id": user_id, "token": token, "used": False})
+    if not token_data:
+        await message.reply_text("Invalid or already used token.")
+        return
+
+    # Increase the user's limit
+    user_limit = await get_user_limit(user_id)
+    new_limit = user_limit + LIMIT_INCREASE_AMOUNT
+    await update_user_limit(user_id, new_limit)
+
+    # Mark the token as used
+    token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
+
+    await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
+
         
 #=====================================================================================##
 
@@ -173,9 +238,12 @@ REPLY_ERROR = """<code>Use this command as a replay to any telegram message with
 async def not_joined(client: Client, message: Message):
     buttons = [
         [
-            InlineKeyboardButton(
-                "Join Channel",
-                url = client.invitelink)
+            InlineKeyboardButton(text="Join Channel", url=client.invitelink),
+            InlineKeyboardButton(text="Join Channel", url=client.invitelink2),
+        ],
+        [
+            InlineKeyboardButton(text="Join Channel", url=client.invitelink3),
+            #InlineKeyboardButton(text="Join Channel", url=client.invitelink4),
         ]
     ]
     try:
@@ -202,6 +270,7 @@ async def not_joined(client: Client, message: Message):
         quote = True,
         disable_web_page_preview = True
     )
+
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
