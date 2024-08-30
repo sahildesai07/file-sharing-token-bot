@@ -190,8 +190,10 @@ async def verify_token_command(client: Client, message: Message):
         # Mark the token as used
         await token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
 
-        await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}.
-
+        # Corrected f-string
+        await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
+    except Exception as e:
+        print(f"Error in verify_token_command: {e}")
 
 
 # Check command handler to check current limit
