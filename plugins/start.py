@@ -13,40 +13,37 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 from pymongo import MongoClient
+from motor.motor_asyncio import AsyncIOMotorClient
 from bot import Bot
 from config import *
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import  del_user, full_userbase #, present_user , add_user
 from shortzy import Shortzy
 
-client = MongoClient(DB_URI)
-db = client[DB_NAME]
-user_collection = db['users']
-token_collection = db['tokens']
 
 # Define limits
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
+mongo_client = AsyncIOMotorClient(DB_NAME)
+db = mongo_client[DB_NAME]
+user_collection = db['user_collection']
+token_collection = db['tokens']
+
 # Utility function to check if the user exists in the database
 async def present_user(user_id):
-    return user_collection.find_one({"_id": user_id})
+    return await user_collection.find_one({"_id": user_id})
 
 # Utility function to add a new user with the default limit
 async def add_user(user_id):
-    user_collection.insert_one({
+    await user_collection.insert_one({
         "_id": user_id,
         "limit": START_COMMAND_LIMIT
     })
 
 # Utility function to update the user's limit
 async def update_user_limit(user_id, new_limit):
-    user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
-
-# Utility function to generate a random token for verification
-def generate_token():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    
+    await user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
 
 # Ensure the get_user_limit function is properly implemented
 async def get_user_limit(user_id):
@@ -56,7 +53,6 @@ async def get_user_limit(user_id):
     else:
         # Handle cases where the user might not exist or handle a default limit
         return 0
-
 
 # Main start command handler
 @Client.on_message(filters.command('start') & filters.private & subscribed)
@@ -77,7 +73,6 @@ async def start_command(client: Client, message: Message):
 
     # Decrease the user's limit by 1 each time they use the /start command
     await update_user_limit(user_id, user_limit - 1)
-
     text = message.text
     if len(text) > 7:
         try:
