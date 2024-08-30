@@ -29,14 +29,14 @@ from config import (
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
-from database.database import add_user, del_user, full_userbase, present_user
+from database.database import get_start_of_day , get_start_of_week , count_verified_users , add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
 """add time in seconds for waiting before delete 
 1 min = 60, 2 min = 60 × 2 = 120, 5 min = 60 × 5 = 300"""
 # SECONDS = int(os.getenv("SECONDS", "1200"))
 
-@bot.on_message(filters.command("count") & filters.user(ADMINS))
+@bot.on_message(filters.command("count") & filters.user(YOUR_ADMIN_USER_ID))
 async def count_command(client, message):
     today_count = await count_verified_users_today()
     last_24h_count = await count_verified_users_last_24h()
