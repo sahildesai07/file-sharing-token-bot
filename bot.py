@@ -8,6 +8,7 @@ from pyrogram import Client
 from pyrogram.enums import ParseMode
 import sys
 from datetime import datetime
+from database.database import log_verification, get_verification_count, cleanup_old_logs
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, FORCE_SUB_CHANNEL2, FORCE_SUB_CHANNEL3, FORCE_SUB_CHANNEL4, CHANNEL_ID, PORT
 import pyrogram.utils
 
@@ -119,7 +120,11 @@ class Bot(Client):
     async def stop(self, *args):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped , https://t.me/ultroid_official.")
-            
+        
+    async def periodic_cleanup():
+        while True:
+            await cleanup_old_logs()
+            await asyncio.sleep(3600)       
 
 
 
