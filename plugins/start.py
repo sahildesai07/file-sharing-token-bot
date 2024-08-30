@@ -13,7 +13,8 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from bot import Bot
 from config import *
 from helper_func import subscribed, encode, decode, get_messages
-from database.database import del_user, full_userbase
+from database.database import del_user, full_userbase , add_user, get_user_limit, update_user_limit, store_token, verify_token
+
 from shortzy import Shortzy
 
 # Initialize logging
@@ -29,29 +30,6 @@ db = mongo_client[DB_NAME]
 user_collection = db['user_collection']
 token_collection = db['tokens']
 
-def generate_token():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-
-async def present_user(user_id):
-    return await user_collection.find_one({"_id": user_id})
-
-async def add_user(user_id):
-    await user_collection.insert_one({
-        "_id": user_id,
-        "limit": START_COMMAND_LIMIT
-    })
-
-async def update_user_limit(user_id, new_limit):
-    result = await user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
-    if result.modified_count == 0:
-        logger.info(f"No document updated for user_id: {user_id}")
-
-async def get_user_limit(user_id):
-    user_data = await user_collection.find_one({"_id": user_id})
-    if user_data:
-        return user_data.get('limit', 0)
-    else:
-        return 0
 
 @Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -142,15 +120,11 @@ async def limit_command(client: Client, message: Message):
 
     try:
         token = generate_token()
-        verification_link = f"https://telegram.dog/{client.username}?start=limit_{token}"
+        verification_link = f"https://t.me/{client.username}?start=limit_{token}"
 
-        await token_collection.insert_one({
-            "user_id": user_id,
-            "token": token,
-            "used": False
-        })
+        await store_token(user_id, token)
 
-        await message.reply_text(f"Your current limit is {user_limit}. You can increase your limit by using the link below:\n{verification_link}")
+        await message.reply_text(f"Your current limit is {user_limit}. Increase your limit using the link below:\n{verification_link}")
     except Exception as e:
         logger.error(f"Error in limit_command: {e}")
         await message.reply_text("An error occurred while generating the verification link.")
@@ -161,27 +135,18 @@ async def verify_token_command(client: Client, message: Message):
     token = message.text.split('limit_')[1]
 
     try:
-        token_data = await token_collection.find_one({"user_id": user_id, "token": token, "used": False})
-        if not token_data:
+        if await verify_token(user_id, token):
+            user_limit = await get_user_limit(user_id)
+            new_limit = user_limit + LIMIT_INCREASE_AMOUNT
+            await update_user_limit(user_id, new_limit)
+
+            await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
+        else:
             await message.reply_text("Invalid or already used token.")
-            return
-
-        user_limit = await get_user_limit(user_id)
-        if user_limit is None:
-            await message.reply_text("User not found.")
-            return
-
-        new_limit = user_limit + LIMIT_INCREASE_AMOUNT
-        await update_user_limit(user_id, new_limit)
-
-        await token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
-
-        await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
     except Exception as e:
         logger.error(f"Error in verify_token_command: {e}")
         await message.reply_text("An error occurred during token verification.")
 
-# Check command handler to check current limit
 @Client.on_message(filters.command('check') & filters.private)
 async def check_command(client: Client, message: Message):
     user_id = message.from_user.id
@@ -191,6 +156,8 @@ async def check_command(client: Client, message: Message):
         await message.reply_text(f"Your current limit is {user_limit}.")
     except Exception as e:
         logger.error(f"Error in check_command: {e}")
+        await message.reply_text("An error occurred while checking your limit.")
+
 
 #=====================================================================================##
 
