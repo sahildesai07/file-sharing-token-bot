@@ -8,6 +8,36 @@ user_collection = db['user_collection']
 token_collection = db['tokens']
 user_data = db['users']
 
+verification_log_collection = db['verification_logs']
+
+async def log_verification(user_id):
+    await verification_log_collection.insert_one({
+        "user_id": user_id,
+        "timestamp": datetime.utcnow()
+    })
+
+async def get_verification_count(timeframe):
+    current_time = datetime.utcnow()
+    
+    if timeframe == "24h":
+        start_time = current_time - timedelta(hours=24)
+    elif timeframe == "today":
+        start_time = current_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif timeframe == "monthly":
+        start_time = current_time.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    count = await verification_log_collection.count_documents({
+        "timestamp": {"$gte": start_time, "$lt": current_time}
+    })
+    
+    return count
+
+async def cleanup_old_logs():
+    expiry_time = datetime.utcnow() - timedelta(hours=24)
+    await verification_log_collection.delete_many({
+        "timestamp": {"$lt": expiry_time}
+    })
+    
 async def get_previous_token(user_id):
     user_data = await user_collection.find_one({"_id": user_id})
     return user_data.get("previous_token", None)
