@@ -55,14 +55,14 @@ async def start_command(client: Client, message: Message):
         try:
             await add_user(user_id)
         except Exception as e:
-            logger.error(f"Failed to add user: {e}")
+            logger.error(f"Error adding user: {e}")
 
     # Retrieve user data
     user_data = await user_collection.find_one({"_id": user_id})
     user_limit = user_data.get("limit", START_COMMAND_LIMIT)
     previous_token = user_data.get("previous_token")
 
-    # Generate a new token if necessary
+    # Generate a new token only if previous_token is not available
     if not previous_token:
         previous_token = str(uuid.uuid4())
         await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": previous_token}}, upsert=True)
@@ -75,6 +75,7 @@ async def start_command(client: Client, message: Message):
     if len(message.text) > 7 and "verify_" in message.text:
         provided_token = message.text.split("verify_", 1)[1]
         if provided_token == previous_token:
+            # Verification successful, increase limit by 10
             await update_user_limit(user_id, user_limit + LIMIT_INCREASE_AMOUNT)
             confirmation_message = await message.reply_text("Your limit has been successfully increased by 10!")
             asyncio.create_task(delete_message_after_delay(confirmation_message, AUTO_DELETE_DELAY))
@@ -86,13 +87,29 @@ async def start_command(client: Client, message: Message):
 
     # If the limit is reached, prompt the user to use the verification link
     if user_limit <= 0:
-        limit_message = "Your limit has been reached. Use the following link to increase your limit."
-        btn = [
-            [InlineKeyboardButton("Increase LIMIT", url=shortened_link)],
-            [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
-            [InlineKeyboardButton('Try Again', url=f"https://t.me/{client.username}?start={message.command[1]}")]
-        ]
-        await message.reply(limit_message, reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+        limit_message = "Your limit has been reached. Use the following link to increase your limit"
+        buttons = []
+        try:
+            buttons.append(
+                [
+                    InlineKeyboardButton(
+                        text='Increase LIMIT',
+                        url=shortened_link
+                    )
+                ]
+            )
+        except IndexError:
+            logger.error("IndexError: message.command[1] is missing or invalid")
+
+        buttons.append(
+            [
+                InlineKeyboardButton('Verification Tutorial', url=TUT_VID),
+                InlineKeyboardButton('Try Again', url=f"https://t.me/{client.username}?start={message.command[1]}")
+            ]
+        )
+        
+        reply_markup = InlineKeyboardMarkup(buttons)
+        await message.reply(limit_message, reply_markup=reply_markup, protect_content=False, quote=True)
         asyncio.create_task(delete_message_after_delay(message, AUTO_DELETE_DELAY))
         return
 
@@ -103,66 +120,94 @@ async def start_command(client: Client, message: Message):
     if len(text) > 7:
         try:
             base64_string = text.split(" ", 1)[1]
-            string = await decode(base64_string)
-            argument = string.split("-")
-            if len(argument) == 3:
+        except IndexError:
+            return
+        
+        string = await decode(base64_string)
+        argument = string.split("-")
+        
+        if len(argument) == 3:
+            try:
                 start = int(int(argument[1]) / abs(client.db_channel.id))
                 end = int(int(argument[2]) / abs(client.db_channel.id))
-                ids = range(start, end + 1) if start <= end else []
-            elif len(argument) == 2:
-                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+            except Exception as e:
+                logger.error(f"Error parsing arguments: {e}")
+                return
+            
+            if start <= end:
+                ids = range(start, end + 1)
             else:
-                ids = []
-
-            temp_msg = await message.reply("Please wait...")
+                ids = list(range(start, end - 1, -1))
+        elif len(argument) == 2:
+            try:
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+            except Exception as e:
+                logger.error(f"Error parsing arguments: {e}")
+                return
+        
+        temp_msg = await message.reply("Please wait...")
+        try:
             messages = await get_messages(client, ids)
-            await temp_msg.delete()
-
-            for msg in messages:
-                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html,
-                                                filename=msg.document.file_name) if bool(CUSTOM_CAPTION) & bool(msg.document) else "" if not msg.caption else msg.caption.html
-                reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
-
-                try:
-                    sent_message = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
-                                                  reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
-                    await asyncio.sleep(0.5)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    sent_message = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
-                                                  reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
-                except Exception as e:
-                    logger.error(f"Failed to send message: {e}")
-            return
         except Exception as e:
-            logger.error(f"Error processing command: {e}")
+            await message.reply_text("Something went wrong..!")
+            logger.error(f"Error getting messages: {e}")
             return
+        
+        await temp_msg.delete()
 
-    # Welcome message
-    reply_markup = InlineKeyboardMarkup(
-        [
+        for msg in messages:
+            caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html,
+                                            filename=msg.document.file_name) if bool(CUSTOM_CAPTION) & bool(msg.document) else "" if not msg.caption else msg.caption.html
+
+            reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
+
+            try:
+                sent_message = await msg.copy(
+                    chat_id=message.from_user.id,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                    protect_content=PROTECT_CONTENT
+                )
+                asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
+                await asyncio.sleep(0.5)
+            except FloodWait as e:
+                await asyncio.sleep(e.x)
+                sent_message = await msg.copy(
+                    chat_id=message.from_user.id,
+                    caption=caption,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                    protect_content=PROTECT_CONTENT
+                )
+                asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
+            except Exception as e:
+                logger.error(f"Error copying message: {e}")
+                pass
+        return
+    else:
+        reply_markup = InlineKeyboardMarkup(
             [
-                InlineKeyboardButton("😊 About Me", callback_data="about"),
-                InlineKeyboardButton("🔒 Close", callback_data="close")
+                [
+                    InlineKeyboardButton("😊 About Me", callback_data="about"),
+                    InlineKeyboardButton("🔒 Close", callback_data="close")
+                ]
             ]
-        ]
-    )
-    welcome_message = await message.reply_text(
-        text=START_MSG.format(
-            first=message.from_user.first_name,
-            last=message.from_user.last_name,
-            username=None if not message.from_user.username else '@' + message.from_user.username,
-            mention=message.from_user.mention,
-            id=message.from_user.id
-        ),
-        reply_markup=reply_markup,
-        disable_web_page_preview=True,
-        quote=True
-    )
-    asyncio.create_task(delete_message_after_delay(welcome_message, AUTO_DELETE_DELAY))
-    return
+        )
+        welcome_message = await message.reply_text(
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
+            ),
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
+        )
+        asyncio.create_task(delete_message_after_delay(welcome_message, AUTO_DELETE_DELAY))
+        return
 
 @Client.on_message(filters.command('check') & filters.private)
 async def check_command(client: Client, message: Message):
@@ -176,6 +221,52 @@ async def check_command(client: Client, message: Message):
         logger.error(f"Error in check_command: {e}")
         error_message = await message.reply_text("An error occurred while checking your limit.")
         asyncio.create_task(delete_message_after_delay(error_message, AUTO_DELETE_DELAY))
+
+
+#=====================================================================================##
+
+WAIT_MSG = """"<b>Processing ...</b>"""
+
+REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
+
+#=====================================================================================##
+
+    
+    
+@Bot.on_message(filters.command('start') & filters.private)
+async def not_joined(client: Client, message: Message):
+    buttons = [
+        [
+            InlineKeyboardButton(
+                "Join Channel",
+                url = client.invitelink)
+        ]
+    ]
+    try:
+        buttons.append(
+            [
+                InlineKeyboardButton(
+                    text = 'Try Again',
+                    url = f"https://t.me/{client.username}?start={message.command[1]}"
+                )
+            ]
+        )
+    except IndexError:
+        pass
+
+    await message.reply(
+        text = FORCE_MSG.format(
+                first = message.from_user.first_name,
+                last = message.from_user.last_name,
+                username = None if not message.from_user.username else '@' + message.from_user.username,
+                mention = message.from_user.mention,
+                id = message.from_user.id
+            ),
+        reply_markup = InlineKeyboardMarkup(buttons),
+        quote = True,
+        disable_web_page_preview = True
+    )
+
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
