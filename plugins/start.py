@@ -28,25 +28,27 @@ logger = logging.getLogger(__name__)
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
-# Initialize MongoDB client and database
 mongo_client = AsyncIOMotorClient(DB_URI)
 db = mongo_client[DB_NAME]
 user_collection = db['user_collection']
 token_collection = db['tokens']
 
-# Utility functions
+# Utility function to check if the user exists in the database
 async def present_user(user_id):
     return await user_collection.find_one({"_id": user_id})
 
+# Utility function to add a new user with the default limit
 async def add_user(user_id):
     await user_collection.insert_one({
         "_id": user_id,
         "limit": START_COMMAND_LIMIT
     })
 
+# Utility function to update the user's limit
 async def update_user_limit(user_id, new_limit):
     await user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
 
+# Utility function to get the user's limit
 async def get_user_limit(user_id):
     user_data = await user_collection.find_one({"_id": user_id})
     if user_data:
@@ -54,12 +56,12 @@ async def get_user_limit(user_id):
     else:
         return 0
 
+# Utility function to generate a random token for verification
 def generate_token():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
-
 # Main start command handler
-@Client.on_message(filters.command('start') & filters.private & filters.create(lambda _, __, m: m.chat.id in [/* list of allowed chat IDs */]))
+@Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
@@ -88,31 +90,26 @@ async def start_command(client: Client, message: Message):
                 argument = decoded_string.split("-")
                 
                 if len(argument) == 3:
-                    try:
-                        start = int(int(argument[1]) / abs(client.db_channel.id))
-                        end = int(int(argument[2]) / abs(client.db_channel.id))
-                        ids = range(start, end + 1) if start <= end else []
-                    except:
-                        ids = []
+                    start = int(int(argument[1]) / abs(client.db_channel.id))
+                    end = int(int(argument[2]) / abs(client.db_channel.id))
+                    ids = range(start, end + 1) if start <= end else []
                 elif len(argument) == 2:
-                    try:
-                        ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                    except:
-                        ids = []
+                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
                 else:
                     ids = []
-                
+
                 temp_msg = await message.reply("Please wait...")
                 try:
                     messages = await get_messages(client, ids)
                 except Exception as e:
                     await message.reply_text("Something went wrong..!")
-                    logger.error(f"Error retrieving messages: {e}")
+                    print(f"Error retrieving messages: {e}")
                     return
                 await temp_msg.delete()
 
                 for msg in messages:
                     caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else "" if not msg.caption else msg.caption.html
+
                     reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
                     try:
@@ -122,9 +119,9 @@ async def start_command(client: Client, message: Message):
                         await asyncio.sleep(e.x)
                         await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                     except Exception as e:
-                        logger.error(f"Error copying message: {e}")
+                        print(f"Error copying message: {e}")
             except Exception as e:
-                logger.error(f"Error processing base64 string: {e}")
+                print(f"Error processing base64 string: {e}")
         else:
             # Send welcome message with options
             reply_markup = InlineKeyboardMarkup(
@@ -147,9 +144,8 @@ async def start_command(client: Client, message: Message):
                 disable_web_page_preview=True,
                 quote=True
             )
-
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        print(f"Unexpected error: {e}")
 
 # Limit command handler to generate and store a verification token
 @Client.on_message(filters.command('limit') & filters.private)
@@ -157,16 +153,21 @@ async def limit_command(client: Client, message: Message):
     user_id = message.from_user.id
     user_limit = await get_user_limit(user_id)
 
-    token = generate_token()
-    verification_link = f"https://telegram.dog/{client.username}?start=limit_{token}"
+    try:
+        # Generate a verification link using a random token
+        token = generate_token()
+        verification_link = f"https://telegram.dog/{client.username}?start=limit_{token}"
 
-    await token_collection.insert_one({
-        "user_id": user_id,
-        "token": token,
-        "used": False
-    })
+        # Store the token in the database with the user_id for later verification
+        await token_collection.insert_one({
+            "user_id": user_id,
+            "token": token,
+            "used": False  # To track if the token has already been used
+        })
 
-    await message.reply_text(f"Your current limit is {user_limit}. You can increase your limit by using the link below:\n{verification_link}")
+        await message.reply_text(f"Your current limit is {user_limit}. You can increase your limit by using the link below:\n{verification_link}")
+    except Exception as e:
+        print(f"Error in limit command: {e}")
 
 # Token verification handler to increase the user's limit
 @Client.on_message(filters.regex(r'^/start limit_(\w+)$') & filters.private)
@@ -174,19 +175,24 @@ async def verify_token_command(client: Client, message: Message):
     user_id = message.from_user.id
     token = message.text.split('limit_')[1]
 
-    token_data = await token_collection.find_one({"user_id": user_id, "token": token, "used": False})
-    if not token_data:
-        await message.reply_text("Invalid or already used token.")
-        return
+    try:
+        # Check if the token is valid and hasn't been used
+        token_data = await token_collection.find_one({"user_id": user_id, "token": token, "used": False})
+        if not token_data:
+            await message.reply_text("Invalid or already used token.")
+            return
 
-    user_limit = await get_user_limit(user_id)
-    new_limit = user_limit + LIMIT_INCREASE_AMOUNT
-    await update_user_limit(user_id, new_limit)
+        # Increase the user's limit
+        user_limit = await get_user_limit(user_id)
+        new_limit = user_limit + LIMIT_INCREASE_AMOUNT
+        await update_user_limit(user_id, new_limit)
 
-    await token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
+        # Mark the token as used
+        await token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
 
-    await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
-
+        await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
+    except Exception as e:
+        print(f"Error in verify_token_command: {e}")
         
 #=====================================================================================##
 
