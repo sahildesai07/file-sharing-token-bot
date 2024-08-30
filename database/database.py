@@ -6,8 +6,8 @@ database = dbclient[DB_NAME]
 
 user_data = database['users']
 # Define collections
-user_collection = db['user_collection']
-token_collection = db['tokens']
+user_collection = database['user_collection']
+token_collection = database['tokens']
 
 default_verify = {
     'is_verified': False,
