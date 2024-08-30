@@ -2,11 +2,9 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 
-CREDIT_AMOUNT = 5
-TOKEN_VERIFICATION = True
-USER_LIMIT = 5
 START_COMMAND_LIMIT = 15  # Default limit for new users
-LIMIT_INCREASE_AMOUNT = 10 
+LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
+AUTO_DELETE_DELAY = 600  # Time in seconds after which messages will be deleted (600 seconds = 10 minutes)
 
 #Bot token @Botfather
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7130558359zEJz_JUK8s5DWzv-bRFiLVrX4")
