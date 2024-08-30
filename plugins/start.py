@@ -60,11 +60,11 @@ async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
     # Check if user exists in the database; if not, add them
-    if not await present_user(user_id):
-        await add_user(user_id)
+    if not present_user(user_id):
+        add_user(user_id)
 
     # Get the user's current limit
-    user_limit = await get_user_limit(user_id)
+    user_limit = get_user_limit(user_id)
     
     # If the user has no limit left, prompt them to increase it
     if user_limit <= 0:
@@ -72,7 +72,7 @@ async def start_command(client: Client, message: Message):
         return
 
     # Decrease the user's limit by 1 each time they use the /start command
-    await update_user_limit(user_id, user_limit - 1)
+    update_user_limit(user_id, user_limit - 1)
 
     text = message.text
     if len(text) > 7:
@@ -80,7 +80,7 @@ async def start_command(client: Client, message: Message):
             base64_string = text.split(" ", 1)[1]
         except:
             return
-        string = await decode(base64_string)
+        string = decode(base64_string)
         argument = string.split("-")
         if len(argument) == 3:
             try:
@@ -126,7 +126,7 @@ async def start_command(client: Client, message: Message):
                 await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                 await asyncio.sleep(0.5)
             except FloodWait as e:
-                await asyncio.sleep(e.x)
+                await asyncio.sleep(e.value)
                 await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
             except:
                 pass
@@ -158,7 +158,7 @@ async def start_command(client: Client, message: Message):
 @Client.on_message(filters.command('limit') & filters.private)
 async def limit_command(client: Client, message: Message):
     user_id = message.from_user.id
-    user_limit = await get_user_limit(user_id)
+    user_limit = get_user_limit(user_id)
 
     # Generate a verification link using a random token
     token = generate_token()
@@ -186,38 +186,15 @@ async def verify_token_command(client: Client, message: Message):
         return
 
     # Increase the user's limit
-    user_limit = await get_user_limit(user_id)
+    user_limit = get_user_limit(user_id)
     new_limit = user_limit + LIMIT_INCREASE_AMOUNT
-    await update_user_limit(user_id, new_limit)
+    update_user_limit(user_id, new_limit)
 
     # Mark the token as used
     token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
 
     await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
 
-"""
-# Token verification handler to increase the user's limit
-@Client.on_message(filters.regex(r'^/start limit_(\w+)$') & filters.private)
-async def verify_token_command(client: Client, message: Message):
-    user_id = message.from_user.id
-    token = message.text.split('limit_')[1]
-
-    # Check if the token is valid and hasn't been used
-    token_data = token_collection.find_one({"user_id": user_id, "token": token, "used": False})
-    if not token_data:
-        await message.reply_text("Invalid or already used token.")
-        return
-
-    # Increase the user's limit
-    user_limit = await get_user_limit(user_id)
-    new_limit = user_limit + LIMIT_INCREASE_AMOUNT
-    await update_user_limit(user_id, new_limit)
-
-    # Mark the token as used
-    token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
-
-    await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
-"""
         
 #=====================================================================================##
 
