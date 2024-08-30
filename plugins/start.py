@@ -24,12 +24,13 @@ logger = logging.getLogger(__name__)
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
+"""
 # Initialize MongoDB client and database
 mongo_client = AsyncIOMotorClient(DB_URI)
 db = mongo_client[DB_NAME]
 user_collection = db['user_collection']
 token_collection = db['tokens']
-
+"""
 
 @Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
