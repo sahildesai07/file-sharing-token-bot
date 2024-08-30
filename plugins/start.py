@@ -54,9 +54,8 @@ async def update_user_limit(user_id, new_limit):
 def generate_token():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
-
 # Main start command handler
-@Client.on_message(filters.command('start') & filters.private & filters.text)
+@Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
