@@ -4,7 +4,7 @@ import logging
 import os
 import random
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
@@ -332,19 +332,25 @@ Unsuccessful: <code>{unsuccessful}</code></b>"""
         await asyncio.sleep(8)
         await msg.delete()
 
-@Client.on_message(filters.command('count') & filters.private)
-async def stats_command(client: Client, message: Message):
-    total_verifications = await verification_log_collection.count_documents({})
-    last_24h = await get_verification_count("24h")
-    today = await get_verification_count("today")
-    monthly = await get_verification_count("monthly")
+@Client.on_message(filters.command('count') & filters.private & filters.user(ADMINS))
+async def count_command(client: Client, message: Message):
+    try:
+        # Get the count of users who used a token in the last 24 hours
+        last_24h_count = await get_verification_count("24h")
 
-    stats_message = (
-        f"Verification Stats:\n"
-        f"Total Verifications: {total_verifications}\n"
-        f"In the Last 24 Hours: {last_24h}\n"
-        f"Today's Verifications: {today}\n"
-        f"Monthly Verifications: {monthly}"
-    )
+        # Get the count of users who used a token today
+        today_count = await get_verification_count("today")
 
-    await message.reply_text(stats_message)
+        count_message = (
+            f"Token usage stats:\n"
+            f"Last 24 hours: {last_24h_count} users\n"
+            f"Today's token users: {today_count} users"
+        )
+        
+        response_message = await message.reply_text(count_message)
+        asyncio.create_task(delete_message_after_delay(response_message, AUTO_DELETE_DELAY))
+
+    except Exception as e:
+        logger.error(f"Error in count_command: {e}")
+        error_message = await message.reply_text("An error occurred while retrieving count data.")
+        asyncio.create_task(delete_message_after_delay(error_message, AUTO_DELETE_DELAY))
