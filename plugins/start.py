@@ -39,13 +39,6 @@ async def add_user(user_id):
         "limit": START_COMMAND_LIMIT
     })
 
-# Utility function to get the user's current limit
-async def get_user_limit(user_id):
-    user_data = present_user(user_id)
-    if user_data:
-        return user_data['limit']
-    return START_COMMAND_LIMIT
-
 # Utility function to update the user's limit
 async def update_user_limit(user_id, new_limit):
     user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
@@ -54,6 +47,15 @@ async def update_user_limit(user_id, new_limit):
 def generate_token():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     
+# Ensure the get_user_limit function is properly implemented
+async def get_user_limit(user_id):
+    user_data = await users_collection.find_one({"user_id": user_id})
+    if user_data:
+        return user_data['limit']
+    else:
+        # Handle cases where the user might not exist or handle a default limit
+        return 0
+
 # Main start command handler
 @Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -153,6 +155,7 @@ async def start_command(client: Client, message: Message):
             quote=True
         )
         return
+
 
 
 
