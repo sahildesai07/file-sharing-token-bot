@@ -4,7 +4,7 @@ from config import DB_URI, DB_NAME
 
 dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
 database = dbclient[DB_NAME]
-
+users_collection = db['users_collection_name']
 user_data = database['users']
 
 default_verify = {
@@ -24,6 +24,12 @@ def new_user(id):
             'link': ""
         }
     }
+
+
+
+async def count_verified_users():
+    count = users_collection.count_documents({'is_verified': True})
+    return count
 
 async def present_user(user_id: int):
     found = await user_data.find_one({'_id': user_id})
