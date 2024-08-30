@@ -1,10 +1,10 @@
 
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
+from datetime import datetime, timedelta
 
 dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
 database = dbclient[DB_NAME]
-users_collection = db['users_collection_name']
 user_data = database['users']
 
 default_verify = {
@@ -28,7 +28,31 @@ def new_user(id):
 
 
 async def count_verified_users():
-    count = users_collection.count_documents({'is_verified': True})
+    count = user_data.count_documents({'is_verified': True})
+    return count
+
+def get_start_of_day():
+    now = datetime.now()
+    return datetime(now.year, now.month, now.day)
+
+def get_start_of_week():
+    now = datetime.now()
+    start_of_week = now - timedelta(days=now.weekday())
+    return datetime(start_of_week.year, start_of_week.month, start_of_week.day)
+
+async def count_verified_users_today():
+    start_of_day = get_start_of_day()
+    count = user_data.count_documents({'is_verified': True, 'verified_time': {'$gte': start_of_day}})
+    return count
+
+async def count_verified_users_last_24h():
+    last_24h = datetime.now() - timedelta(hours=24)
+    count = user_data.count_documents({'is_verified': True, 'verified_time': {'$gte': last_24h}})
+    return count
+
+async def count_verified_users_this_week():
+    start_of_week = get_start_of_week()
+    count = user_data.count_documents({'is_verified': True, 'verified_time': {'$gte': start_of_week}})
     return count
 
 async def present_user(user_id: int):
