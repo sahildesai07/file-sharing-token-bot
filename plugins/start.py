@@ -9,7 +9,7 @@ from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
-from motor.motor_asyncio import AsyncIOMotorClient
+#from motor.motor_asyncio import AsyncIOMotorClient
 from bot import Bot
 from config import *
 from helper_func import subscribed, encode, decode, get_messages
