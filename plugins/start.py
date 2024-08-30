@@ -29,7 +29,7 @@ from config import (
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
-from database.database import get_start_of_day , get_start_of_week , count_verified_users , add_user, del_user, full_userbase, present_user
+from database.database import count_verified_users_today ,count_verified_users_last_24h , count_verified_users_this_week , get_start_of_day , get_start_of_week , count_verified_users , add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
 """add time in seconds for waiting before delete 
