@@ -8,6 +8,13 @@ user_collection = db['user_collection']
 token_collection = db['tokens']
 user_data = db['users']
 
+async def get_previous_token(user_id):
+    user_data = await user_collection.find_one({"_id": user_id})
+    return user_data.get("previous_token", None)
+
+async def set_previous_token(user_id, token):
+    await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": token}})
+    
 async def add_user(user_id):
     await user_collection.insert_one({
         "_id": user_id,
