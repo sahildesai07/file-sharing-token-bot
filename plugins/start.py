@@ -68,14 +68,14 @@ async def start_command(client: Client, message: Message):
     # Generate the verification link
     verification_link = f"https://t.me/{client.username}?start=verify_{previous_token}"
     shortened_link = get_shortlink(SHORTLINK_URL, SHORTLINK_API, f"https://t.me/{client.username}?start=verify_{previous_token}")
-
+    """
     # Use Shortzy to shorten the verification link
     try:
         shortened_link = shortzy.shorten(verification_link)
     except Exception as e:
         await message.reply_text(f"Error shortening the link: {str(e)}")
         return
-
+    """
     # Check if the user is providing a verification token
     if len(message.text) > 7 and "verify_" in message.text:
         provided_token = message.text.split("verify_", 1)[1]
