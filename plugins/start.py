@@ -60,11 +60,11 @@ async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
     # Check if user exists in the database; if not, add them
-    if not present_user(user_id):
-        add_user(user_id)
+    if not await present_user(user_id):
+        await add_user(user_id)
 
     # Get the user's current limit
-    user_limit = get_user_limit(user_id)
+    user_limit = await get_user_limit(user_id)  # Ensure to await this coroutine
     
     # If the user has no limit left, prompt them to increase it
     if user_limit <= 0:
@@ -72,7 +72,7 @@ async def start_command(client: Client, message: Message):
         return
 
     # Decrease the user's limit by 1 each time they use the /start command
-    update_user_limit(user_id, user_limit - 1)
+    await update_user_limit(user_id, user_limit - 1)
 
     text = message.text
     if len(text) > 7:
@@ -80,7 +80,7 @@ async def start_command(client: Client, message: Message):
             base64_string = text.split(" ", 1)[1]
         except:
             return
-        string = decode(base64_string)
+        string = await decode(base64_string)
         argument = string.split("-")
         if len(argument) == 3:
             try:
@@ -126,7 +126,7 @@ async def start_command(client: Client, message: Message):
                 await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                 await asyncio.sleep(0.5)
             except FloodWait as e:
-                await asyncio.sleep(e.value)
+                await asyncio.sleep(e.x)
                 await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
             except:
                 pass
@@ -153,6 +153,7 @@ async def start_command(client: Client, message: Message):
             quote=True
         )
         return
+
 
 # Limit command handler to generate and store a verification token
 @Client.on_message(filters.command('limit') & filters.private)
