@@ -12,9 +12,15 @@ from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 from bot import Bot
 from config import *
 from helper_func import subscribed, encode, decode, get_messages
-from database.database import log_verification, get_verification_count, cleanup_old_logs ,  present_user, get_previous_token, set_previous_token, del_user, full_userbase, add_user, get_user_limit, update_user_limit, store_token, verify_token, user_collection, token_collection
+from database.database import (
+    log_verification, get_verification_count, cleanup_old_logs, present_user,
+    get_previous_token, set_previous_token, del_user, full_userbase, add_user,
+    get_user_limit, update_user_limit, store_token, verify_token, user_collection,
+    token_collection
+)
 import uuid
 from shortzy import Shortzy
+
 # Initialize Shortzy
 shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
 
@@ -68,7 +74,7 @@ async def start_command(client: Client, message: Message):
         if provided_token == previous_token:
             # Verification successful, increase limit by 10
             await update_user_limit(user_id, user_limit + LIMIT_INCREASE_AMOUNT)
-	    await log_verification(user_id)
+            await log_verification(user_id)
             confirmation_message = await message.reply_text("Your limit has been successfully increased by 10!")
             asyncio.create_task(delete_message_after_delay(confirmation_message, AUTO_DELETE_DELAY))
             return
@@ -216,7 +222,6 @@ async def start_command(client: Client, message: Message):
         asyncio.create_task(delete_message_after_delay(welcome_message, AUTO_DELETE_DELAY))
         return
 
-
 @Client.on_message(filters.command('check') & filters.private)
 async def check_command(client: Client, message: Message):
     user_id = message.from_user.id
@@ -230,8 +235,7 @@ async def check_command(client: Client, message: Message):
         error_message = await message.reply_text("An error occurred while checking your limit.")
         asyncio.create_task(delete_message_after_delay(error_message, AUTO_DELETE_DELAY))
 
-
-#=====================================================================================##
+#=========================================================================================##
 
 WAIT_MSG = """"<b>Processing ...</b>"""
 
