@@ -57,90 +57,99 @@ async def get_user_limit(user_id):
 def generate_token():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
+
 # Main start command handler
-@Client.on_message(filters.command('start') & filters.private & subscribed)
+@Client.on_message(filters.command('start') & filters.private & filters.create(lambda _, __, m: m.chat.id in [/* list of allowed chat IDs */]))
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
-    if not await present_user(user_id):
-        await add_user(user_id)
+    try:
+        # Check if user exists in the database; if not, add them
+        if not await present_user(user_id):
+            await add_user(user_id)
 
-    user_limit = await get_user_limit(user_id)
-    
-    if user_limit <= 0:
-        await message.reply_text("Your limit has been reached. Use /limit to increase your limit.")
-        return
+        # Get the user's current limit
+        user_limit = await get_user_limit(user_id)
+        
+        # If the user has no limit left, prompt them to increase it
+        if user_limit <= 0:
+            await message.reply_text("Your limit has been reached. Use /limit to increase your limit.")
+            return
 
-    await update_user_limit(user_id, user_limit - 1)
+        # Decrease the user's limit by 1 each time they use the /start command
+        await update_user_limit(user_id, user_limit - 1)
 
-    text = message.text
-    if len(text) > 7:
-        try:
-            base64_string = text.split(" ", 1)[1]
-            decoded_string = await decode(base64_string)
-            argument = decoded_string.split("-")
-            
-            if len(argument) == 3:
-                try:
-                    start = int(int(argument[1]) / abs(client.db_channel.id))
-                    end = int(int(argument[2]) / abs(client.db_channel.id))
-                    ids = range(start, end + 1) if start <= end else []
-                except Exception as e:
-                    logger.error(f"Error parsing range: {e}")
-                    return
-            elif len(argument) == 2:
-                try:
-                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                except Exception as e:
-                    logger.error(f"Error parsing ID: {e}")
-                    return
-            else:
-                ids = []
-
-            temp_msg = await message.reply("Please wait...")
+        # Handling base64 decoding and message retrieval
+        text = message.text
+        if len(text) > 7:
             try:
-                messages = await get_messages(client, ids)
-            except Exception as e:
-                await message.reply_text("Something went wrong..!")
-                logger.error(f"Error retrieving messages: {e}")
-                return
-            await temp_msg.delete()
-
-            for msg in messages:
-                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else "" if not msg.caption else msg.caption.html
-                reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
-
+                base64_string = text.split(" ", 1)[1]
+                decoded_string = await decode(base64_string)
+                argument = decoded_string.split("-")
+                
+                if len(argument) == 3:
+                    try:
+                        start = int(int(argument[1]) / abs(client.db_channel.id))
+                        end = int(int(argument[2]) / abs(client.db_channel.id))
+                        ids = range(start, end + 1) if start <= end else []
+                    except:
+                        ids = []
+                elif len(argument) == 2:
+                    try:
+                        ids = [int(int(argument[1]) / abs(client.db_channel.id))]
+                    except:
+                        ids = []
+                else:
+                    ids = []
+                
+                temp_msg = await message.reply("Please wait...")
                 try:
-                    await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    await asyncio.sleep(0.5)
-                except FloodWait as e:
-                    await asyncio.sleep(e.x)
-                    await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    messages = await get_messages(client, ids)
                 except Exception as e:
-                    logger.error(f"Error copying message: {e}")
-                    pass
-        return
+                    await message.reply_text("Something went wrong..!")
+                    logger.error(f"Error retrieving messages: {e}")
+                    return
+                await temp_msg.delete()
 
-    reply_markup = InlineKeyboardMarkup(
-        [
-            [
-                InlineKeyboardButton("😊 About Me", callback_data="about"),
-                InlineKeyboardButton("🔒 Close", callback_data="close")
-            ]
-        ]
-    )
-    await message.reply_text(
-        text=START_MSG.format(
-            first=message.from_user.first_name,
-            last=message.from_user.last_name,
-            username=None if not message.from_user.username else '@' + message.from_user.username,
-            mention=message.from_user.mention,
-            id=message.from_user.id
-        ),
-        reply_markup=reply_markup,
-        disable_web_page_preview=True,
-        quote=True
-    )
+                for msg in messages:
+                    caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else "" if not msg.caption else msg.caption.html
+                    reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
+
+                    try:
+                        await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                        await asyncio.sleep(0.5)
+                    except FloodWait as e:
+                        await asyncio.sleep(e.x)
+                        await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    except Exception as e:
+                        logger.error(f"Error copying message: {e}")
+            except Exception as e:
+                logger.error(f"Error processing base64 string: {e}")
+        else:
+            # Send welcome message with options
+            reply_markup = InlineKeyboardMarkup(
+                [
+                    [
+                        InlineKeyboardButton("😊 About Me", callback_data="about"),
+                        InlineKeyboardButton("🔒 Close", callback_data="close")
+                    ]
+                ]
+            )
+            await message.reply_text(
+                text=START_MSG.format(
+                    first=message.from_user.first_name,
+                    last=message.from_user.last_name,
+                    username=None if not message.from_user.username else '@' + message.from_user.username,
+                    mention=message.from_user.mention,
+                    id=message.from_user.id
+                ),
+                reply_markup=reply_markup,
+                disable_web_page_preview=True,
+                quote=True
+            )
+
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
 
 # Limit command handler to generate and store a verification token
 @Client.on_message(filters.command('limit') & filters.private)
