@@ -25,7 +25,7 @@ from shortzy import Shortzy
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
-mongo_client = AsyncIOMotorClient(DB_NAME)
+mongo_client = AsyncIOMotorClient(DB_URI)
 db = mongo_client[DB_NAME]
 user_collection = db['user_collection']
 token_collection = db['tokens']
