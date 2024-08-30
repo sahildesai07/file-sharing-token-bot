@@ -17,6 +17,7 @@ from database.database import present_user ,get_previous_token , set_previous_to
 import uuid
 from shortzy import Shortzy
 
+shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
