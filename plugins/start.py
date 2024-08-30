@@ -17,21 +17,23 @@ from database.database import present_user ,get_previous_token , set_previous_to
 import uuid
 from shortzy import Shortzy
 
-shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
+
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-START_COMMAND_LIMIT = 15  # Default limit for new users
-LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
-# Load Shortzy settings from config
+# Default settings
+START_COMMAND_LIMIT = 15
+LIMIT_INCREASE_AMOUNT = 10
+
+# Shortzy settings
 SHORTLINK_URL = os.environ.get("SHORTLINK_URL", "api.shareus.io")
 SHORTLINK_API = os.environ.get("SHORTLINK_API", "PUIAQBIFrydvLhIzAOeGV8yZppu2")
+shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
 
-# Initialize Shortzy
 async def get_shortlink(url, api, link):
     shortzy = Shortzy(api_key=api, base_site=url)
-    verification_link = await shortzy.convert(link)
+    verification_link = await shortzy.convert(verification_link)
     return verification_link
 
 @Client.on_message(filters.command('start') & filters.private)
@@ -50,26 +52,19 @@ async def start_command(client: Client, message: Message):
     user_limit = user_data.get("limit", 10)
     previous_token = user_data.get("previous_token")
 
-    # Generate a new token only if previous_token is not available
+    # Generate a new token if not available
     if not previous_token:
         previous_token = str(uuid.uuid4())
         await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": previous_token}}, upsert=True)
 
-    # Generate the verification link
+    # Generate and shorten the verification link
     verification_link = f"https://t.me/{client.username}?start=verify_{previous_token}"
-    shortened_link = get_shortlink(SHORTLINK_URL, SHORTLINK_API, f"https://t.me/{client.username}?start=verify_{previous_token}")
-    # Use Shortzy to shorten the verification link
-    try:
-        shortened_link = shortzy.shorten(verification_link)
-    except Exception as e:
-        await message.reply_text(f"Error shortening the link: {str(e)}")
-        return
+    shortened_link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, verification_link)
 
     # Check if the user is providing a verification token
     if len(message.text) > 7 and "verify_" in message.text:
         provided_token = message.text.split("verify_", 1)[1]
         if provided_token == previous_token:
-            # Verification successful, increase limit by 10
             await update_user_limit(user_id, user_limit + 10)
             await message.reply_text("Your limit has been successfully increased by 10!")
             return
@@ -77,74 +72,55 @@ async def start_command(client: Client, message: Message):
             await message.reply_text("Invalid verification token. Please try again.")
             return
 
-    # If the limit is reached, prompt the user to use the verification link
+    # Check if the limit is reached
     if user_limit <= 0:
         await message.reply_text(f"Your limit has been reached. Use the following link to increase your limit: {shortened_link}")
         return
 
-    # Deduct 1 from the user's limit and continue with the normal start command process
+    # Deduct 1 from the user's limit
     await update_user_limit(user_id, user_limit - 1)
 
-    text = message.text
-    if len(text) > 7:
+    # Handle start command with arguments
+    if len(message.text) > 7:
         try:
-            base64_string = text.split(" ", 1)[1]
-        except:
-            return
-        string = await decode(base64_string)
-        argument = string.split("-")
-        if len(argument) == 3:
-            try:
+            base64_string = message.text.split(" ", 1)[1]
+            string = await decode(base64_string)
+            argument = string.split("-")
+            ids = []
+
+            if len(argument) == 3:
                 start = int(int(argument[1]) / abs(client.db_channel.id))
                 end = int(int(argument[2]) / abs(client.db_channel.id))
-            except:
-                return
-            if start <= end:
-                ids = range(start, end + 1)
-            else:
-                ids = []
-                i = start
-                while True:
-                    ids.append(i)
-                    i -= 1
-                    if i < end:
-                        break
-        elif len(argument) == 2:
-            try:
+                ids = range(start, end + 1) if start <= end else range(start, end - 1, -1)
+
+            elif len(argument) == 2:
                 ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-            except:
-                return
-        temp_msg = await message.reply("Please wait...")
-        try:
+
+            temp_msg = await message.reply("Please wait...")
             messages = await get_messages(client, ids)
-        except:
-            await message.reply_text("Something went wrong..!")
+            await temp_msg.delete()
+
+            for msg in messages:
+                caption = (CUSTOM_CAPTION.format(previouscaption=msg.caption.html if msg.caption else "", filename=msg.document.file_name)
+                           if CUSTOM_CAPTION and msg.document else msg.caption.html)
+                reply_markup = msg.reply_markup if DISABLE_CHANNEL_BUTTON else None
+
+                try:
+                    await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    await asyncio.sleep(0.5)
+                except FloodWait as e:
+                    await asyncio.sleep(e.x)
+                    await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                except:
+                    pass
             return
-        await temp_msg.delete()
 
-        for msg in messages:
-            if bool(CUSTOM_CAPTION) & bool(msg.document):
-                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html,
-                                                filename=msg.document.file_name)
-            else:
-                caption = "" if not msg.caption else msg.caption.html
+        except Exception as e:
+            await message.reply_text("Something went wrong..!")
+            logger.error(f"Error handling start command with arguments: {e}")
+            return
 
-            if DISABLE_CHANNEL_BUTTON:
-                reply_markup = msg.reply_markup
-            else:
-                reply_markup = None
-
-            try:
-                await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
-                               reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                await asyncio.sleep(0.5)
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
-                               reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-            except:
-                pass
-        return
+    # Handle start command without arguments
     else:
         reply_markup = InlineKeyboardMarkup(
             [
@@ -167,40 +143,7 @@ async def start_command(client: Client, message: Message):
             quote=True
         )
         return
-"""
-@Client.on_message(filters.command('limit') & filters.private)
-async def limit_command(client: Client, message: Message):
-    user_id = message.from_user.id
 
-    try:
-        token = generate_token()
-        await store_token(user_id, token)
-
-        verification_link = f"https://t.me/{client.username}?start=limit_{token}"
-
-        await message.reply_text(f"Your current limit is {await get_user_limit(user_id)}. Increase your limit using the link below:\n{verification_link}")
-    except Exception as e:
-        logger.error(f"Error in limit_command: {e}")
-        await message.reply_text("An error occurred while generating the verification link.")
-
-@Client.on_message(filters.regex(r'^/start limit_(\w+)$') & filters.private)
-async def verify_token_command(client: Client, message: Message):
-    user_id = message.from_user.id
-    token = message.text.split('limit_')[1]
-
-    try:
-        if await verify_token(user_id, token):
-            user_limit = await get_user_limit(user_id)
-            new_limit = user_limit + LIMIT_INCREASE_AMOUNT
-            await update_user_limit(user_id, new_limit)
-
-            await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
-        else:
-            await message.reply_text("Invalid or already used token.")
-    except Exception as e:
-        logger.error(f"Error in verify_token_command: {e}")
-        await message.reply_text("An error occurred during token verification.")
-"""
 @Client.on_message(filters.command('check') & filters.private)
 async def check_command(client: Client, message: Message):
     user_id = message.from_user.id
@@ -211,7 +154,6 @@ async def check_command(client: Client, message: Message):
     except Exception as e:
         logger.error(f"Error in check_command: {e}")
         await message.reply_text("An error occurred while checking your limit.")
-
 #=====================================================================================##
 
 WAIT_MSG = "<b>Processing ...</b>"
