@@ -47,14 +47,16 @@ async def update_user_limit(user_id, new_limit):
 def generate_token():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     
+
 # Ensure the get_user_limit function is properly implemented
 async def get_user_limit(user_id):
-    user_data = await users_collection.find_one({"user_id": user_id})
+    user_data = await user_collection.find_one({"_id": user_id})
     if user_data:
         return user_data['limit']
     else:
         # Handle cases where the user might not exist or handle a default limit
         return 0
+
 
 # Main start command handler
 @Client.on_message(filters.command('start') & filters.private & subscribed)
