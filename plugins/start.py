@@ -87,31 +87,46 @@ async def start_command(client: Client, message: Message):
 
     # If the limit is reached, prompt the user to use the verification link
     if user_limit <= 0:
-        limit_message = "Your limit has been reached. Use the following link to increase your limit"
-        buttons = []
-        try:
-            buttons.append(
-                [
-                    InlineKeyboardButton(
-                        text='Increase LIMIT',
-                        url=shortened_link
-                    )
-                ]
-            )
-        except IndexError:
-            logger.error("IndexError: message.command[1] is missing or invalid")
+    limit_message = "Your limit has been reached. Use the following link to increase your limit"
+    buttons = []
 
+    try:
         buttons.append(
             [
-                InlineKeyboardButton('Verification Tutorial', url=TUT_VID),
-                InlineKeyboardButton('Try Again', url=f"https://t.me/{client.username}?start={message.command[1]}")
+                InlineKeyboardButton(
+                    text='Increase LIMIT',
+                    url=shortened_link
+                )
             ]
         )
-        
-        reply_markup = InlineKeyboardMarkup(buttons)
-        await message.reply(limit_message, reply_markup=reply_markup, protect_content=False, quote=True)
-        asyncio.create_task(delete_message_after_delay(message, AUTO_DELETE_DELAY))
-        return
+    except IndexError:
+        logger.error("IndexError: message.command[1] is missing or invalid")
+
+    # Ensure message.command has at least 2 elements before accessing message.command[1]
+    try:
+        try_again_button = InlineKeyboardButton(
+            'Try Again',
+            url=f"https://t.me/{client.username}?start={message.command[1]}"
+        )
+        buttons.append([try_again_button])
+    except IndexError:
+        logger.error("IndexError: message.command[1] is missing or invalid")
+        buttons.append(
+            [
+                InlineKeyboardButton('Try Again', url=f"https://t.me/{client.username}?start=default")
+            ]
+        )
+
+    buttons.append(
+        [
+            InlineKeyboardButton('Verification Tutorial', url=TUT_VID)
+        ]
+    )
+    
+    reply_markup = InlineKeyboardMarkup(buttons)
+    await message.reply(limit_message, reply_markup=reply_markup, protect_content=False, quote=True)
+    asyncio.create_task(delete_message_after_delay(message, AUTO_DELETE_DELAY))
+    return
 
     # Deduct 1 from the user's limit and continue with the normal start command process
     await update_user_limit(user_id, user_limit - 1)
