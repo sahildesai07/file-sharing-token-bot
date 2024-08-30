@@ -63,12 +63,10 @@ async def present_user(user_id):
     return user_data is not None
 
 async def full_userbase():
-    user_docs = user_data.find()
+    user_docs = user_collection.find()
     user_ids = []
     for doc in user_docs:
         user_ids.append(doc['_id'])
-        
-    return user_ids
 
 async def del_user(user_id: int):
     user_data.delete_one({'_id': user_id})
