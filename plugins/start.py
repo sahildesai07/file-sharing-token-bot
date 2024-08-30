@@ -24,12 +24,6 @@ logger = logging.getLogger(__name__)
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
-"""
-def generate_token():
-    """Generate a random token."""
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-    """
-
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
