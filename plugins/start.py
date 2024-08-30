@@ -23,7 +23,15 @@ logger = logging.getLogger(__name__)
 
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
-shortzy = Shortzy(api_key=SHORTLINK_API, base_url=SHORTLINK_URL)
+# Load Shortzy settings from config
+SHORTLINK_URL = os.environ.get("SHORTLINK_URL", "api.shareus.io")
+SHORTLINK_API = os.environ.get("SHORTLINK_API", "PUIAQBIFrydvLhIzAOeGV8yZppu2")
+
+# Initialize Shortzy
+async def get_shortlink(url, api, link):
+    shortzy = Shortzy(api_key=api, base_site=url)
+    verification_link = await shortzy.convert(link)
+    return verification_link
 
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
@@ -48,7 +56,7 @@ async def start_command(client: Client, message: Message):
 
     # Generate the verification link
     verification_link = f"https://t.me/{client.username}?start=verify_{previous_token}"
-
+    shortened_link = get_shortlink(SHORTLINK_URL, SHORTLINK_API, f"https://t.me/{client.username}?start=verify_{previous_token})
     # Use Shortzy to shorten the verification link
     try:
         shortened_link = shortzy.shorten(verification_link)
