@@ -13,7 +13,7 @@ from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 from bot import Bot
 from config import *
 from helper_func import subscribed, encode, decode, get_messages
-from database.database import del_user, full_userbase , add_user, get_user_limit, update_user_limit, store_token, verify_token , user_collection , token_collection 
+from database.database import present_user ,get_previous_token , set_previous_token , del_user, full_userbase , add_user, get_user_limit, update_user_limit, store_token, verify_token , user_collection , token_collection 
 import uuid
 from shortzy import Shortzy
 
@@ -25,31 +25,10 @@ START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
 """
-# Initialize MongoDB client and database
-mongo_client = AsyncIOMotorClient(DB_URI)
-db = mongo_client[DB_NAME]
-user_collection = db['user_collection']
-token_collection = db['tokens']
-"""
-
-async def get_user_limit(user_id):
-    user_data = await user_collection.find_one({"_id": user_id})
-    return user_data.get("limit", 0)
-
-async def update_user_limit(user_id, new_limit):
-    await user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
-
-async def get_previous_token(user_id):
-    user_data = await user_collection.find_one({"_id": user_id})
-    return user_data.get("previous_token", None)
-
-async def set_previous_token(user_id, token):
-    await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": token}})
-
-
 def generate_token():
     """Generate a random token."""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    """
 
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
