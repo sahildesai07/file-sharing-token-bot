@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
+shortzy = Shortzy(api_key=SHORTLINK_API, base_url=SHORTLINK_URL)
 
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
@@ -45,7 +46,15 @@ async def start_command(client: Client, message: Message):
         previous_token = str(uuid.uuid4())
         await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": previous_token}}, upsert=True)
 
+    # Generate the verification link
     verification_link = f"https://t.me/{client.username}?start=verify_{previous_token}"
+
+    # Use Shortzy to shorten the verification link
+    try:
+        shortened_link = shortzy.shorten(verification_link)
+    except Exception as e:
+        await message.reply_text(f"Error shortening the link: {str(e)}")
+        return
 
     # Check if the user is providing a verification token
     if len(message.text) > 7 and "verify_" in message.text:
@@ -61,7 +70,7 @@ async def start_command(client: Client, message: Message):
 
     # If the limit is reached, prompt the user to use the verification link
     if user_limit <= 0:
-        await message.reply_text(f"Your limit has been reached. Use the following link to increase your limit: {verification_link}")
+        await message.reply_text(f"Your limit has been reached. Use the following link to increase your limit: {shortened_link}")
         return
 
     # Deduct 1 from the user's limit and continue with the normal start command process
