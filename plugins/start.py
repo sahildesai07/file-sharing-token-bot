@@ -32,11 +32,15 @@ user_collection = db['user_collection']
 token_collection = db['tokens']
 """
 
-@Client.on_message(filters.command('start') & filters.private & subscribed)
+def generate_token():
+    """Generate a random token."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+@Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
-    if not await present_user(user_id):
+    if not await user_collection.find_one({"_id": user_id}):
         await add_user(user_id)
 
     user_limit = await get_user_limit(user_id)
@@ -117,15 +121,14 @@ async def start_command(client: Client, message: Message):
 @Client.on_message(filters.command('limit') & filters.private)
 async def limit_command(client: Client, message: Message):
     user_id = message.from_user.id
-    user_limit = await get_user_limit(user_id)
 
     try:
         token = generate_token()
-        verification_link = f"https://t.me/{client.username}?start=limit_{token}"
-
         await store_token(user_id, token)
 
-        await message.reply_text(f"Your current limit is {user_limit}. Increase your limit using the link below:\n{verification_link}")
+        verification_link = f"https://t.me/{client.username}?start=limit_{token}"
+
+        await message.reply_text(f"Your current limit is {await get_user_limit(user_id)}. Increase your limit using the link below:\n{verification_link}")
     except Exception as e:
         logger.error(f"Error in limit_command: {e}")
         await message.reply_text("An error occurred while generating the verification link.")
@@ -158,7 +161,6 @@ async def check_command(client: Client, message: Message):
     except Exception as e:
         logger.error(f"Error in check_command: {e}")
         await message.reply_text("An error occurred while checking your limit.")
-
 
 #=====================================================================================##
 
