@@ -191,6 +191,20 @@ async def verify_token_command(client: Client, message: Message):
         await token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
 
         await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}.
+
+
+
+# Check command handler to check current limit
+@Client.on_message(filters.command('check') & filters.private)
+async def check_command(client: Client, message: Message):
+    user_id = message.from_user.id
+
+    try:
+        # Retrieve the user's current limit
+        user_limit = await get_user_limit(user_id)
+        await message.reply_text(f"Your current limit is {user_limit}.")
+    except Exception as e:
+        print(f"Error in check command: {e}")
         
 #=====================================================================================##
 
