@@ -54,6 +54,10 @@ async def get_user_limit(user_id):
         # Handle cases where the user might not exist or handle a default limit
         return 0
 
+# Utility function to generate a random token for verification
+def generate_token():
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
 # Main start command handler
 @Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
