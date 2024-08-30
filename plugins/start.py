@@ -14,7 +14,7 @@ from bot import Bot
 from config import *
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import del_user, full_userbase , add_user, get_user_limit, update_user_limit, store_token, verify_token , user_collection , token_collection 
-
+import uuid
 from shortzy import Shortzy
 
 # Initialize logging
@@ -32,6 +32,21 @@ user_collection = db['user_collection']
 token_collection = db['tokens']
 """
 
+async def get_user_limit(user_id):
+    user_data = await user_collection.find_one({"_id": user_id})
+    return user_data.get("limit", 0)
+
+async def update_user_limit(user_id, new_limit):
+    await user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
+
+async def get_previous_token(user_id):
+    user_data = await user_collection.find_one({"_id": user_id})
+    return user_data.get("previous_token", None)
+
+async def set_previous_token(user_id, token):
+    await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": token}})
+
+
 def generate_token():
     """Generate a random token."""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
@@ -39,19 +54,48 @@ def generate_token():
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
-    
-    if not await user_collection.find_one({"_id": user_id}):
-        await add_user(user_id)
 
-    user_limit = await get_user_limit(user_id)
-    
+    # Ensure user exists in the database
+    if not await present_user(user_id):
+        try:
+            await add_user(user_id)
+        except:
+            pass
+
+    # Retrieve user data
+    user_data = await user_collection.find_one({"_id": user_id})
+    user_limit = user_data.get("limit", 10)
+    previous_token = user_data.get("previous_token")
+
+    # Generate a new token only if previous_token is not available
+    if not previous_token:
+        previous_token = str(uuid.uuid4())
+        await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": previous_token}}, upsert=True)
+
+    verification_link = f"https://t.me/{client.username}?start=verify_{previous_token}"
+
+    # Check if the user is providing a verification token
+    if len(message.text) > 7 and "verify_" in message.text:
+        provided_token = message.text.split("verify_", 1)[1]
+        if provided_token == previous_token:
+            # Verification successful, increase limit by 10
+            await update_user_limit(user_id, user_limit + 10)
+            await message.reply_text("Your limit has been successfully increased by 10!")
+            return
+        else:
+            await message.reply_text("Invalid verification token. Please try again.")
+            return
+
+    # If the limit is reached, prompt the user to use the verification link
     if user_limit <= 0:
-        await message.reply_text("Your limit has been reached. Use /limit to increase your limit.")
+        await message.reply_text(f"Your limit has been reached. Use the following link to increase your limit: {verification_link}")
         return
 
+    # Deduct 1 from the user's limit and continue with the normal start command process
     await update_user_limit(user_id, user_limit - 1)
 
-    if len(text)>7:
+    text = message.text
+    if len(text) > 7:
         try:
             base64_string = text.split(" ", 1)[1]
         except:
@@ -65,7 +109,7 @@ async def start_command(client: Client, message: Message):
             except:
                 return
             if start <= end:
-                ids = range(start,end+1)
+                ids = range(start, end + 1)
             else:
                 ids = []
                 i = start
@@ -88,9 +132,9 @@ async def start_command(client: Client, message: Message):
         await temp_msg.delete()
 
         for msg in messages:
-
             if bool(CUSTOM_CAPTION) & bool(msg.document):
-                caption = CUSTOM_CAPTION.format(previouscaption = "" if not msg.caption else msg.caption.html, filename = msg.document.file_name)
+                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html,
+                                                filename=msg.document.file_name)
             else:
                 caption = "" if not msg.caption else msg.caption.html
 
@@ -100,11 +144,13 @@ async def start_command(client: Client, message: Message):
                 reply_markup = None
 
             try:
-                await msg.copy(chat_id=message.from_user.id, caption = caption, parse_mode = ParseMode.HTML, reply_markup = reply_markup, protect_content=PROTECT_CONTENT)
+                await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
+                               reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                 await asyncio.sleep(0.5)
             except FloodWait as e:
                 await asyncio.sleep(e.x)
-                await msg.copy(chat_id=message.from_user.id, caption = caption, parse_mode = ParseMode.HTML, reply_markup = reply_markup, protect_content=PROTECT_CONTENT)
+                await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
+                               reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
             except:
                 pass
         return
@@ -112,25 +158,25 @@ async def start_command(client: Client, message: Message):
         reply_markup = InlineKeyboardMarkup(
             [
                 [
-                    InlineKeyboardButton("😊 About Me", callback_data = "about"),
-                    InlineKeyboardButton("🔒 Close", callback_data = "close")
+                    InlineKeyboardButton("😊 About Me", callback_data="about"),
+                    InlineKeyboardButton("🔒 Close", callback_data="close")
                 ]
             ]
         )
         await message.reply_text(
-            text = START_MSG.format(
-                first = message.from_user.first_name,
-                last = message.from_user.last_name,
-                username = None if not message.from_user.username else '@' + message.from_user.username,
-                mention = message.from_user.mention,
-                id = message.from_user.id
+            text=START_MSG.format(
+                first=message.from_user.first_name,
+                last=message.from_user.last_name,
+                username=None if not message.from_user.username else '@' + message.from_user.username,
+                mention=message.from_user.mention,
+                id=message.from_user.id
             ),
-            reply_markup = reply_markup,
-            disable_web_page_preview = True,
-            quote = True
+            reply_markup=reply_markup,
+            disable_web_page_preview=True,
+            quote=True
         )
         return
-
+"""
 @Client.on_message(filters.command('limit') & filters.private)
 async def limit_command(client: Client, message: Message):
     user_id = message.from_user.id
@@ -163,7 +209,7 @@ async def verify_token_command(client: Client, message: Message):
     except Exception as e:
         logger.error(f"Error in verify_token_command: {e}")
         await message.reply_text("An error occurred during token verification.")
-
+"""
 @Client.on_message(filters.command('check') & filters.private)
 async def check_command(client: Client, message: Message):
     user_id = message.from_user.id
