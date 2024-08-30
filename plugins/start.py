@@ -33,8 +33,8 @@ shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
 
 async def get_shortlink(url, api, link):
     shortzy = Shortzy(api_key=api, base_site=url)
-    verification_link = await shortzy.convert(verification_link)
-    return verification_link
+    link = await shortzy.convert(link)
+    return link
 
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message: Message):
