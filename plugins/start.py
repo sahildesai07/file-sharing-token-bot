@@ -28,32 +28,6 @@ token_collection = db['tokens']
 START_COMMAND_LIMIT = 15  # Default limit for new users
 LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
 
-# Utility function to check if the user exists in the database
-async def present_user(user_id):
-    return user_collection.find_one({"_id": user_id})
-
-# Utility function to add a new user with the default limit
-async def add_user(user_id):
-    user_collection.insert_one({
-        "_id": user_id,
-        "limit": START_COMMAND_LIMIT
-    })
-
-# Utility function to get the user's current limit
-async def get_user_limit(user_id):
-    user_data = await present_user(user_id)
-    if user_data:
-        return user_data['limit']
-    return START_COMMAND_LIMIT
-
-# Utility function to update the user's limit
-async def update_user_limit(user_id, new_limit):
-    user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
-
-# Utility function to generate a random token for verification
-def generate_token():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-
 # Main start command handler
 @Client.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -194,7 +168,6 @@ async def verify_token_command(client: Client, message: Message):
     token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
 
     await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
-
         
 #=====================================================================================##
 
