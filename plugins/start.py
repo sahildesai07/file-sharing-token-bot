@@ -68,7 +68,7 @@ async def start_command(client: Client, message: Message):
         if provided_token == previous_token:
             # Verification successful, increase limit by 10
             await update_user_limit(user_id, user_limit + LIMIT_INCREASE_AMOUNT)
-			await log_verification(user_id)
+	    await log_verification(user_id)
             confirmation_message = await message.reply_text("Your limit has been successfully increased by 10!")
             asyncio.create_task(delete_message_after_delay(confirmation_message, AUTO_DELETE_DELAY))
             return
