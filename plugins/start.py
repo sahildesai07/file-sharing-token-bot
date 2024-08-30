@@ -64,7 +64,7 @@ async def start_command(client: Client, message: Message):
         await add_user(user_id)
 
     # Get the user's current limit
-    user_limit = await get_user_limit(user_id)  # Ensure to await this coroutine
+    user_limit = await get_user_limit(user_id)  # Awaiting the coroutine
     
     # If the user has no limit left, prompt them to increase it
     if user_limit <= 0:
@@ -153,6 +153,7 @@ async def start_command(client: Client, message: Message):
             quote=True
         )
         return
+
 
 
 # Limit command handler to generate and store a verification token
