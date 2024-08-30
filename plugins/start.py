@@ -92,7 +92,13 @@ async def start_command(client: Client, message: Message):
 
     # If the limit is reached, prompt the user to use the verification link
     if user_limit <= 0:
-        limit_message = await message.reply_text(f"Your limit has been reached. Use the following link to increase your limit: {shortened_link}")
+        limit_message = f"Your limit has been reached. Use the following link to increase your limit"
+        btn = [
+                    [InlineKeyboardButton("Increase LIMIT", url=shortened_link)],
+                    [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
+                    [InlineKeyboardButtom(text = 'Try Again', url = f"https://t.me/{client.username}?start={message.command[1]}")]
+                ]
+                await message.reply(limit_message , reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
         asyncio.create_task(delete_message_after_delay(limit_message, AUTO_DELETE_DELAY))
         return
 
