@@ -5,6 +5,9 @@ from logging.handlers import RotatingFileHandler
 CREDIT_AMOUNT = 5
 TOKEN_VERIFICATION = True
 USER_LIMIT = 5
+START_COMMAND_LIMIT = 15  # Default limit for new users
+LIMIT_INCREASE_AMOUNT = 10 
+
 #Bot token @Botfather
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "7130558359zEJz_JUK8s5DWzv-bRFiLVrX4")
 
