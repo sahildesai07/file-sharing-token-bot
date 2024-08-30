@@ -40,13 +40,33 @@ async def encode(string):
     base64_bytes = base64.urlsafe_b64encode(string_bytes)
     base64_string = (base64_bytes.decode("ascii")).strip("=")
     return base64_string
-
+"""
 async def decode(base64_string):
     base64_string = base64_string.strip("=")
     base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("ascii")
     string_bytes = base64.urlsafe_b64decode(base64_bytes)
     string = string_bytes.decode("ascii")
     return string
+"""
+
+async def decode(base64_string):
+    # Determine if it's a 'limit' link or a regular start link
+    if base64_string.startswith("limit_"):
+        base64_string = base64_string.replace("limit_", "", 1)  # Remove the 'limit_' prefix
+
+    # Standard base64 decoding process
+    base64_string = base64_string.strip("=")
+    base64_bytes = (base64_string + "=" * (-len(base64_string) % 4)).encode("utf-8")
+
+    try:
+        string_bytes = base64.urlsafe_b64decode(base64_bytes)
+        string = string_bytes.decode("utf-8")  # Decode with utf-8
+    except UnicodeDecodeError:
+        # Handle decoding errors for any special cases
+        string = string_bytes.decode("latin-1")  # Fallback decoding
+    
+    return string
+
 
 async def get_messages(client, message_ids):
     messages = []
