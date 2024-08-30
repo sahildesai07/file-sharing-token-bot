@@ -13,6 +13,15 @@ async def add_user(user_id):
         "_id": user_id,
         "limit": START_COMMAND_LIMIT
     })
+"""
+async def present_user(user_id : int):
+    found = user_data.find_one({'_id': user_id})
+    return bool(found)
+    """
+
+async def present_user(user_id):
+    user_data = await user_collection.find_one({"_id": user_id})
+    return user_data is not None
 
 async def full_userbase():
     user_docs = user_data.find()
