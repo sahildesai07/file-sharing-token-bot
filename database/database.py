@@ -6,12 +6,25 @@ db = mongo_client[DB_NAME]
 
 user_collection = db['user_collection']
 token_collection = db['tokens']
+user_data = db['users']
 
 async def add_user(user_id):
     await user_collection.insert_one({
         "_id": user_id,
         "limit": START_COMMAND_LIMIT
     })
+
+async def full_userbase():
+    user_docs = user_data.find()
+    user_ids = []
+    for doc in user_docs:
+        user_ids.append(doc['_id'])
+        
+    return user_ids
+
+async def del_user(user_id: int):
+    user_data.delete_one({'_id': user_id})
+    return
 
 async def get_user_limit(user_id):
     user_data = await user_collection.find_one({"_id": user_id})
