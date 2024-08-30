@@ -20,6 +20,9 @@ from helper_func import subscribed, encode, decode, get_messages
 from database.database import  del_user, full_userbase #, present_user , add_user
 from shortzy import Shortzy
 
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Define limits
 START_COMMAND_LIMIT = 15  # Default limit for new users
@@ -31,22 +34,19 @@ db = mongo_client[DB_NAME]
 user_collection = db['user_collection']
 token_collection = db['tokens']
 
-# Utility function to check if the user exists in the database
+# Utility functions
 async def present_user(user_id):
     return await user_collection.find_one({"_id": user_id})
 
-# Utility function to add a new user with the default limit
 async def add_user(user_id):
     await user_collection.insert_one({
         "_id": user_id,
         "limit": START_COMMAND_LIMIT
     })
 
-# Utility function to update the user's limit
 async def update_user_limit(user_id, new_limit):
     await user_collection.update_one({"_id": user_id}, {"$set": {"limit": new_limit}})
 
-# Utility function to get the user's limit
 async def get_user_limit(user_id):
     user_data = await user_collection.find_one({"_id": user_id})
     if user_data:
@@ -54,7 +54,6 @@ async def get_user_limit(user_id):
     else:
         return 0
 
-# Utility function to generate a random token for verification
 def generate_token():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
 
@@ -63,22 +62,17 @@ def generate_token():
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
     
-    # Check if user exists in the database; if not, add them
     if not await present_user(user_id):
         await add_user(user_id)
 
-    # Get the user's current limit
     user_limit = await get_user_limit(user_id)
     
-    # If the user has no limit left, prompt them to increase it
     if user_limit <= 0:
         await message.reply_text("Your limit has been reached. Use /limit to increase your limit.")
         return
 
-    # Decrease the user's limit by 1 each time they use the /start command
     await update_user_limit(user_id, user_limit - 1)
 
-    # Handling base64 decoding and message retrieval
     text = message.text
     if len(text) > 7:
         try:
@@ -91,27 +85,29 @@ async def start_command(client: Client, message: Message):
                     start = int(int(argument[1]) / abs(client.db_channel.id))
                     end = int(int(argument[2]) / abs(client.db_channel.id))
                     ids = range(start, end + 1) if start <= end else []
-                except:
+                except Exception as e:
+                    logger.error(f"Error parsing range: {e}")
                     return
             elif len(argument) == 2:
                 try:
                     ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                except:
+                except Exception as e:
+                    logger.error(f"Error parsing ID: {e}")
                     return
             else:
                 ids = []
-            
+
             temp_msg = await message.reply("Please wait...")
             try:
                 messages = await get_messages(client, ids)
-            except:
+            except Exception as e:
                 await message.reply_text("Something went wrong..!")
+                logger.error(f"Error retrieving messages: {e}")
                 return
             await temp_msg.delete()
 
             for msg in messages:
                 caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else "" if not msg.caption else msg.caption.html
-
                 reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
                 try:
@@ -120,11 +116,11 @@ async def start_command(client: Client, message: Message):
                 except FloodWait as e:
                     await asyncio.sleep(e.x)
                     await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                except:
+                except Exception as e:
+                    logger.error(f"Error copying message: {e}")
                     pass
         return
 
-    # Send welcome message with options
     reply_markup = InlineKeyboardMarkup(
         [
             [
@@ -152,15 +148,13 @@ async def limit_command(client: Client, message: Message):
     user_id = message.from_user.id
     user_limit = await get_user_limit(user_id)
 
-    # Generate a verification link using a random token
     token = generate_token()
     verification_link = f"https://telegram.dog/{client.username}?start=limit_{token}"
 
-    # Store the token in the database with the user_id for later verification
-    token_collection.insert_one({
+    await token_collection.insert_one({
         "user_id": user_id,
         "token": token,
-        "used": False  # To track if the token has already been used
+        "used": False
     })
 
     await message.reply_text(f"Your current limit is {user_limit}. You can increase your limit by using the link below:\n{verification_link}")
@@ -171,18 +165,15 @@ async def verify_token_command(client: Client, message: Message):
     user_id = message.from_user.id
     token = message.text.split('limit_')[1]
 
-    # Check if the token is valid and hasn't been used
     token_data = await token_collection.find_one({"user_id": user_id, "token": token, "used": False})
     if not token_data:
         await message.reply_text("Invalid or already used token.")
         return
 
-    # Increase the user's limit
     user_limit = await get_user_limit(user_id)
     new_limit = user_limit + LIMIT_INCREASE_AMOUNT
     await update_user_limit(user_id, new_limit)
 
-    # Mark the token as used
     await token_collection.update_one({"_id": token_data['_id']}, {"$set": {"used": True}})
 
     await message.reply_text(f"Your limit has been increased by {LIMIT_INCREASE_AMOUNT}. Your new limit is {new_limit}.")
