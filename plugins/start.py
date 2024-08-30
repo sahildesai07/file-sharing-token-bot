@@ -17,25 +17,27 @@ from database.database import present_user ,get_previous_token , set_previous_to
 import uuid
 from shortzy import Shortzy
 
+# Configuration
+SHORTLINK_URL = os.environ.get("SHORTLINK_URL", "api.shareus.io")
+SHORTLINK_API = os.environ.get("SHORTLINK_API", "PUIAQBIFrydvLhIzAOeGV8yZppu2")
+START_COMMAND_LIMIT = 15  # Default limit for new users
+LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
+AUTO_DELETE_DELAY = 600  # Time in seconds after which messages will be deleted (600 seconds = 10 minutes)
+
+# Initialize Shortzy
 shortzy = Shortzy(api_key=SHORTLINK_API, base_site=SHORTLINK_URL)
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-START_COMMAND_LIMIT = 15  # Default limit for new users
-LIMIT_INCREASE_AMOUNT = 10  # Amount by which the limit is increased after verification
-AUTO_DELETE_DELAY = 600  # Time in seconds after which messages will be deleted (600 seconds = 10 minutes)
-
-# Load Shortzy settings from config
-SHORTLINK_URL = os.environ.get("SHORTLINK_URL", "api.shareus.io")
-SHORTLINK_API = os.environ.get("SHORTLINK_API", "PUIAQBIFrydvLhIzAOeGV8yZppu2")
-
-# Initialize Shortzy
 async def get_shortlink(url, api, link):
-    shortzy = Shortzy(api_key=api, base_site=url)
-    verification_link = await shortzy.convert(link)
-    return verification_link
+    try:
+        verification_link = await shortzy.convert(link)
+        return verification_link
+    except Exception as e:
+        logger.error(f"Error generating short link: {str(e)}")
+        return link
 
 async def delete_message_after_delay(message: Message, delay: int):
     await asyncio.sleep(delay)
@@ -52,36 +54,28 @@ async def start_command(client: Client, message: Message):
     if not await present_user(user_id):
         try:
             await add_user(user_id)
-        except:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to add user: {e}")
 
     # Retrieve user data
     user_data = await user_collection.find_one({"_id": user_id})
-    user_limit = user_data.get("limit", 10)
+    user_limit = user_data.get("limit", START_COMMAND_LIMIT)
     previous_token = user_data.get("previous_token")
 
-    # Generate a new token only if previous_token is not available
+    # Generate a new token if necessary
     if not previous_token:
         previous_token = str(uuid.uuid4())
         await user_collection.update_one({"_id": user_id}, {"$set": {"previous_token": previous_token}}, upsert=True)
 
     # Generate the verification link
     verification_link = f"https://t.me/{client.username}?start=verify_{previous_token}"
-    shortened_link = get_shortlink(SHORTLINK_URL, SHORTLINK_API, f"https://t.me/{client.username}?start=verify_{previous_token}")
-    """
-    # Use Shortzy to shorten the verification link
-    try:
-        shortened_link = shortzy.shorten(verification_link)
-    except Exception as e:
-        await message.reply_text(f"Error shortening the link: {str(e)}")
-        return
-    """
+    shortened_link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, verification_link)
+
     # Check if the user is providing a verification token
     if len(message.text) > 7 and "verify_" in message.text:
         provided_token = message.text.split("verify_", 1)[1]
         if provided_token == previous_token:
-            # Verification successful, increase limit by 10
-            await update_user_limit(user_id, user_limit + 10)
+            await update_user_limit(user_id, user_limit + LIMIT_INCREASE_AMOUNT)
             confirmation_message = await message.reply_text("Your limit has been successfully increased by 10!")
             asyncio.create_task(delete_message_after_delay(confirmation_message, AUTO_DELETE_DELAY))
             return
@@ -92,14 +86,14 @@ async def start_command(client: Client, message: Message):
 
     # If the limit is reached, prompt the user to use the verification link
     if user_limit <= 0:
-        limit_message = f"Your limit has been reached. Use the following link to increase your limit"
+        limit_message = "Your limit has been reached. Use the following link to increase your limit."
         btn = [
-                    [InlineKeyboardButton("Increase LIMIT", url=shortened_link)],
-                    [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
-                    [InlineKeyboardButtom(text = 'Try Again', url = f"https://t.me/{client.username}?start={message.command[1]}")]
-                ]
-                await message.reply(limit_message , reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
-        asyncio.create_task(delete_message_after_delay(limit_message, AUTO_DELETE_DELAY))
+            [InlineKeyboardButton("Increase LIMIT", url=shortened_link)],
+            [InlineKeyboardButton('Verification Tutorial', url=TUT_VID)],
+            [InlineKeyboardButton('Try Again', url=f"https://t.me/{client.username}?start={message.command[1]}")]
+        ]
+        await message.reply(limit_message, reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+        asyncio.create_task(delete_message_after_delay(message, AUTO_DELETE_DELAY))
         return
 
     # Deduct 1 from the user's limit and continue with the normal start command process
@@ -109,87 +103,66 @@ async def start_command(client: Client, message: Message):
     if len(text) > 7:
         try:
             base64_string = text.split(" ", 1)[1]
-        except:
-            return
-        string = await decode(base64_string)
-        argument = string.split("-")
-        if len(argument) == 3:
-            try:
+            string = await decode(base64_string)
+            argument = string.split("-")
+            if len(argument) == 3:
                 start = int(int(argument[1]) / abs(client.db_channel.id))
                 end = int(int(argument[2]) / abs(client.db_channel.id))
-            except:
-                return
-            if start <= end:
-                ids = range(start, end + 1)
+                ids = range(start, end + 1) if start <= end else []
+            elif len(argument) == 2:
+                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
             else:
                 ids = []
-                i = start
-                while True:
-                    ids.append(i)
-                    i -= 1
-                    if i < end:
-                        break
-        elif len(argument) == 2:
-            try:
-                ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-            except:
-                return
-        temp_msg = await message.reply("Please wait...")
-        try:
+
+            temp_msg = await message.reply("Please wait...")
             messages = await get_messages(client, ids)
-        except:
-            await message.reply_text("Something went wrong..!")
-            return
-        await temp_msg.delete()
+            await temp_msg.delete()
 
-        for msg in messages:
-            if bool(CUSTOM_CAPTION) & bool(msg.document):
+            for msg in messages:
                 caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html,
-                                                filename=msg.document.file_name)
-            else:
-                caption = "" if not msg.caption else msg.caption.html
+                                                filename=msg.document.file_name) if bool(CUSTOM_CAPTION) & bool(msg.document) else "" if not msg.caption else msg.caption.html
+                reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
-            if DISABLE_CHANNEL_BUTTON:
-                reply_markup = msg.reply_markup
-            else:
-                reply_markup = None
+                try:
+                    sent_message = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
+                                                  reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
+                    await asyncio.sleep(0.5)
+                except FloodWait as e:
+                    await asyncio.sleep(e.x)
+                    sent_message = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
+                                                  reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
+                except Exception as e:
+                    logger.error(f"Failed to send message: {e}")
+            return
+        except Exception as e:
+            logger.error(f"Error processing command: {e}")
+            return
 
-            try:
-                sent_message = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
-                                              reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
-                await asyncio.sleep(0.5)
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                sent_message = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML,
-                                              reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                asyncio.create_task(delete_message_after_delay(sent_message, AUTO_DELETE_DELAY))
-            except:
-                pass
-        return
-    else:
-        reply_markup = InlineKeyboardMarkup(
+    # Welcome message
+    reply_markup = InlineKeyboardMarkup(
+        [
             [
-                [
-                    InlineKeyboardButton("😊 About Me", callback_data="about"),
-                    InlineKeyboardButton("🔒 Close", callback_data="close")
-                ]
+                InlineKeyboardButton("😊 About Me", callback_data="about"),
+                InlineKeyboardButton("🔒 Close", callback_data="close")
             ]
-        )
-        welcome_message = await message.reply_text(
-            text=START_MSG.format(
-                first=message.from_user.first_name,
-                last=message.from_user.last_name,
-                username=None if not message.from_user.username else '@' + message.from_user.username,
-                mention=message.from_user.mention,
-                id=message.from_user.id
-            ),
-            reply_markup=reply_markup,
-            disable_web_page_preview=True,
-            quote=True
-        )
-        asyncio.create_task(delete_message_after_delay(welcome_message, AUTO_DELETE_DELAY))
-        return
+        ]
+    )
+    welcome_message = await message.reply_text(
+        text=START_MSG.format(
+            first=message.from_user.first_name,
+            last=message.from_user.last_name,
+            username=None if not message.from_user.username else '@' + message.from_user.username,
+            mention=message.from_user.mention,
+            id=message.from_user.id
+        ),
+        reply_markup=reply_markup,
+        disable_web_page_preview=True,
+        quote=True
+    )
+    asyncio.create_task(delete_message_after_delay(welcome_message, AUTO_DELETE_DELAY))
+    return
 
 @Client.on_message(filters.command('check') & filters.private)
 async def check_command(client: Client, message: Message):
