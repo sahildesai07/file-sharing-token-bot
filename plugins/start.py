@@ -97,6 +97,8 @@ async def start_command(client: Client, message: Message):
                     pass
         return
 
+    else:
+
     reply_markup = InlineKeyboardMarkup(
         [
             [
