@@ -40,13 +40,20 @@ async def db_verify_status(user_id):
         return user.get('verify_status', default_verify)
     return default_verify
 
+
 async def count_verified_users():
     verified_count = await user_data.count_documents({'verify_status.is_verified': True})
     return verified_count
 
 
+
 async def db_update_verify_status(user_id, verify):
+    # Increment verify_count each time the user verifies their token
+    current_status = await db_verify_status(user_id)
+    new_count = current_status.get('verify_count', 0) + 1
+    verify['verify_count'] = new_count
     await user_data.update_one({'_id': user_id}, {'$set': {'verify_status': verify}})
+
 
 async def full_userbase():
     user_docs = user_data.find()
