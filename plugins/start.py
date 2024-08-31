@@ -208,17 +208,33 @@ async def not_joined(client: Client, message: Message):
 
 @Bot.on_message(filters.command('count') & filters.private & subscribed)
 async def stats_command(client: Bot, message: Message):
-    id = message.from_user.id
-    user_data = await db_verify_status(id)
-    counts = user_data.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
+    # Initialize counters
+    total_verifications = 0
+    today_verifications = 0
+    last_24_hours_verifications = 0
 
+    # Fetch all users
+    users = await full_userbase()
+
+    for user_id in users:
+        user_data = await user_data.find_one({'_id': user_id})
+        if user_data:
+            counts = user_data.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
+
+            # Accumulate counts
+            total_verifications += counts['total']
+            today_verifications += counts['today']
+            last_24_hours_verifications += counts['last_24_hours']
+
+    # Reply with the aggregated stats
     await message.reply(
-        f"Verification Stats:\n"
-        f"Total Verifications: {counts['total']}\n"
-        f"Today's Verifications: {counts['today']}\n"
-        f"Last 24 Hours Verifications: {counts['last_24_hours']}",
+        f"Verification Stats for All Users:\n"
+        f"Total Verifications: {total_verifications}\n"
+        f"Today's Verifications: {today_verifications}\n"
+        f"Last 24 Hours Verifications: {last_24_hours_verifications}",
         quote=True
     )
+
 
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
