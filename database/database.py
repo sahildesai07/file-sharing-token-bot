@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import motor.motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
 from config import DB_URI, DB_NAME
 
 dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
