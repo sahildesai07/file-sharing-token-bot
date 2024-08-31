@@ -1,11 +1,7 @@
-
 import pymongo
+import time
 from config import DB_URI, DB_NAME
-"""
-dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
-database = dbclient[DB_NAME]
-user_data = database['users']
-"""
+
 # Database connection
 client = pymongo.MongoClient(DB_URI)
 db = client[DB_NAME]
@@ -73,6 +69,7 @@ async def count_verified_users_24hr_and_today():
         "last_24_hours": verifications_collection.count_documents({"verified_time": {"$gte": last_24_hours}}),
         "today": verifications_collection.count_documents({"verified_time": {"$gte": today}})
     }
+
 
 async def db_verify_status(user_id):
     user = await users_collection.find_one({'_id': user_id})
