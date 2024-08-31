@@ -40,6 +40,11 @@ async def db_verify_status(user_id):
         return user.get('verify_status', default_verify)
     return default_verify
 
+async def count_verified_users():
+    verified_count = await user_data.count_documents({'verify_status.is_verified': True})
+    return verified_count
+
+
 async def db_update_verify_status(user_id, verify):
     await user_data.update_one({'_id': user_id}, {'$set': {'verify_status': verify}})
 
