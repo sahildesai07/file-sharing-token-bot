@@ -201,13 +201,23 @@ async def not_joined(client: Client, message: Message):
 
 
 
-
+"""
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
+"""
 
+@Bot.on_message(filters.command('users') & filters.private)
+async def users_command(client: Client, message: Message):
+    count_24hr, count_today = await count_verified_users_24hr_and_today()
+    await message.reply_text(
+        f"User Statistics:\n\n"
+        f"Users verified in the last 24 hours: {count_24hr}\n"
+        f"Users verified today: {count_today}"
+    )
+    
 @Bot.on_message(filters.private & filters.command('broadcast') & filters.user(ADMINS))
 async def send_text(client: Bot, message: Message):
     if message.reply_to_message:
