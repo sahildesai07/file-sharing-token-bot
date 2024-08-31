@@ -37,14 +37,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @Client.on_message(filters.command('v_count') & filters.private)
-async def verify_count_command(client: Client, message: Message):
+async def verify_count_command(client: Bot, message: Message):
     user_id = message.from_user.id
     verify_status = await db_verify_status(user_id)
     verify_count = verify_status.get('verification_count', 0)
     await message.reply(f"You have verified your token {verify_count} times.", quote=True)
 
 @Client.on_message(filters.command('v_stats') & filters.private & filters.user(ADMINS))
-async def verify_stats_command(client: Client, message: Message):
+async def verify_stats_command(client: Bot, message: Message):
     verified_users_count = await count_verified_users()
     await message.reply(
         f"Total number of users who have verified their tokens: {verified_users_count}",
