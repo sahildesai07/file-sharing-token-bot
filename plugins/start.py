@@ -44,18 +44,13 @@ async def verify_count_command(client: Client, message: Message):
     count = await get_verification_count(user_id)
     await message.reply(f"You have verified your token {count} times.", quote=True)
 
-@Bot.on_message(filters.command('verify_stats') & filters.private )
+@Bot.on_message(filters.command('verify_stats') & filters.private & filters.user(ADMINS))
 async def verify_stats_command(client: Client, message: Message):
-    # Query the database to count users who are verified
-    verified_users_count = await db.verify_status.count_documents({'is_verified': True})
-    
-    # Reply with the count of verified users
+    verified_users_count = await count_verified_users()
     await message.reply(
         f"Total number of users who have verified their tokens: {verified_users_count}",
         quote=True
     )
-
-
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
