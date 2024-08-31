@@ -73,3 +73,12 @@ async def count_verified_users_24hr_and_today():
         "last_24_hours": verifications_collection.count_documents({"verified_time": {"$gte": last_24_hours}}),
         "today": verifications_collection.count_documents({"verified_time": {"$gte": today}})
     }
+
+async def db_verify_status(user_id):
+    user = await users_collection.find_one({'_id': user_id})
+    if user:
+        return user.get('verify_status', default_verify)
+    return default_verify
+
+async def db_update_verify_status(user_id, verify):
+    await users_collection.update_one({'_id': user_id}, {'$set': {'verify_status': verify}})
