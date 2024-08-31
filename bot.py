@@ -7,13 +7,29 @@ from pyrogram import Client
 from pyrogram.enums import ParseMode
 import sys
 from datetime import datetime
-
+from database.database import *
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
 import pyrogram.utils
 
 pyrogram.utils.MIN_CHAT_ID = -999999999999
 pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
 
+async def reset_daily_counts():
+    while True:
+        await asyncio.sleep(86400)  # Sleep for 24 hours
+        await user_data.update_many({}, {'$set': {'verification_counts.today': 0}})
+
+async def clean_old_verifications():
+    while True:
+        current_time = time.time()
+        users = await full_userbase()  # Assuming you have a function to get all users
+        for user_id in users:
+            user_data = await db_verify_status(user_id)
+            if user_data['verification_counts']['last_24_hours'] > 0 and current_time - user_data['last_verification'] > 86400:
+                user_data['verification_counts']['last_24_hours'] -= 1
+                await db_update_verify_status(user_id, user_data)
+        await asyncio.sleep(3600)  # Run every hour
+        
 class Bot(Client):
     def __init__(self):
         super().__init__(
@@ -49,7 +65,7 @@ class Bot(Client):
         try:
             db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
-            test = await self.send_message(chat_id = db_channel.id, text = "Test Message")
+            test = await self.send_message(chat_id=db_channel.id, text="Test Message")
             await test.delete()
         except Exception as e:
             self.LOGGER(__name__).warning(e)
@@ -64,7 +80,12 @@ class Bot(Client):
 ░╚════╝░░╚════╝░╚═════╝░╚══════╝
                                           """)
         self.username = usr_bot_me.username
-        #web-response
+
+        # Start background tasks
+        asyncio.create_task(reset_daily_counts())  # Reset daily counts every 24 hours
+        asyncio.create_task(clean_old_verifications())  # Clean old verifications every hour
+
+        # web-response
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
