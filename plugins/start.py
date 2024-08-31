@@ -37,7 +37,7 @@ from shortzy import Shortzy
 # SECONDS = int(os.getenv("SECONDS", "1200"))
 
 @Bot.on_message(filters.command("count") & filters.user(ADMINS))
-async def count_command(client: Client, message: Message):
+async def count_command(client: Bot, message: Message):
     today_count = await count_verified_users_today()
     last_24h_count = await count_verified_users_last_24h()
     this_week_count = await count_verified_users_this_week()
