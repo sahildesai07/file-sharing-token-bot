@@ -139,14 +139,14 @@ async def start_command(client: Client, message: Message):
                 ]
                 await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
 
-@Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
+@Bot.on_message(filters.command('users') & filters.private )
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text="Processing ...")
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
 
 @Bot.on_message(filters.command('verifications') & filters.private)
-async def verifications_command(client: Client, message: Message):
+async def verifications_command(client: Bot, message: Message):
     verifications = await get_token_verification_stats()
     verification_info = "\n".join([f"User ID: {v['user_id']}, Token: {v['token']}, Time: {time.ctime(v['verified_time'])}" for v in verifications])
     await message.reply_text(f"Verification Statistics:\n\n{verification_info}")
