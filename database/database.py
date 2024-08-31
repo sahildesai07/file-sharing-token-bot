@@ -44,14 +44,22 @@ async def clean_old_verifications():
         users = await full_userbase()  # Assuming you have a function to get all users
         for user_id in users:
             user_data = await db_verify_status(user_id)
-            # Provide a default if 'verification_counts' is missing
-            verification_counts = user_data.get('verification_counts', {'last_24_hours': 0, 'today': 0})
+            
+            # Ensure 'verification_counts' is initialized
+            if 'verification_counts' not in user_data:
+                user_data['verification_counts'] = {
+                    'total': 0,
+                    'last_24_hours': 0,
+                    'today': 0
+                }
+
             last_verification = user_data.get('last_verification', 0)
-            if verification_counts['last_24_hours'] > 0 and current_time - last_verification > 86400:
-                verification_counts['last_24_hours'] -= 1
-                user_data['verification_counts'] = verification_counts
+            if user_data['verification_counts']['last_24_hours'] > 0 and current_time - last_verification > 86400:
+                user_data['verification_counts']['last_24_hours'] -= 1
                 await db_update_verify_status(user_id, user_data)
+        
         await asyncio.sleep(3600)  # Run every hour
+
 
 async def present_user(user_id: int):
     found = await user_data.find_one({'_id': user_id})
