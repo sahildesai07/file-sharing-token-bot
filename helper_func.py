@@ -1,7 +1,7 @@
 #ultroidxTeam (admin - TG )
 #import logging
 #(©)Codexbotz
-
+from pymongo import UpdateOne
 import base64
 import re
 import asyncio
@@ -14,7 +14,7 @@ from shortzy import Shortzy
 import requests
 import time
 from datetime import datetime
-from database.database import users_collection, db_verify_status, db_update_verify_status
+from database.database import user_data, db_verify_status, db_update_verify_status
 
 #logger = logging.getLogger(__name__)
 #logger.setLevel(logging.INFO)
@@ -97,20 +97,37 @@ async def get_message_id(client, message):
 async def get_verify_status(user_id):
     verify = await db_verify_status(user_id)
     return verify
+"""
+async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link=""):
+    current = await db_verify_status(user_id)
+    current['verify_token'] = verify_token
+    current['is_verified'] = is_verified
+    current['verified_time'] = verified_time
+    current['link'] = link
+    await db_update_verify_status(user_id, current)
 
-async def update_verify_status(user_id, is_verified=None, verify_token=None, verified_time=None, link=None):
-    # Update the user's verification status and time
-    update_fields = {}
-    if is_verified is not None:
-        update_fields['is_verified'] = is_verified
-    if verify_token is not None:
+"""
+
+async def update_verify_status(user_id, is_verified=False, verified_time=None, verify_token=None, link=None):
+    update_fields = {
+        'is_verified': is_verified,
+        'verified_time': verified_time,
+    }
+    
+    if verify_token:
         update_fields['verify_token'] = verify_token
-    if verified_time is not None:
-        update_fields['verified_time'] = verified_time
-    if link is not None:
+    
+    if link:
         update_fields['link'] = link
-    update_fields['verified_date'] = datetime.datetime.utcnow().date()  # Track the date of verification
-    await db.update_one({'user_id': user_id}, {'$set': update_fields}, upsert=True)
+    
+    if is_verified:
+        update_fields['$inc'] = {'verification_count': 1}  # Increment the verification count by 1
+    
+    await db.users.update_one(
+        {'user_id': user_id},
+        {'$set': update_fields},
+        upsert=True
+    )
 
 
 
