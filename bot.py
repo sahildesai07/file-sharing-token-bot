@@ -1,6 +1,6 @@
 
 from aiohttp import web
-from plugins import web_server , start
+from plugins import web_server
 
 import pyromod.listen
 from pyrogram import Client
@@ -14,7 +14,6 @@ import pyrogram.utils
 pyrogram.utils.MIN_CHAT_ID = -999999999999
 pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
 
-        
 class Bot(Client):
     def __init__(self):
         super().__init__(
@@ -53,8 +52,9 @@ class Bot(Client):
             test = await self.send_message(chat_id=db_channel.id, text="Test Message")
             await test.delete()
         except Exception as e:
-            self.LOGGER(__name__).warning(e)
-            self.LOGGER(__name__).warning(f"Make Sure bot is Admin in DB Channel, and Double check the CHANNEL_ID Value, Current Value {CHANNEL_ID}")
+            self.LOGGER(__name__).warning(f"Error occurred: {e}")
+            self.LOGGER(__name__).warning(f"CHANNEL_ID: {CHANNEL_ID}, DB Channel ID: {db_channel.id if 'db_channel' in locals() else 'N/A'}")
+            self.LOGGER(__name__).warning(f"Make sure bot is Admin in DB Channel, and Double-check the CHANNEL_ID value.")
             self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroid_official for support")
             sys.exit()
 
@@ -66,11 +66,11 @@ class Bot(Client):
                                           """)
         self.username = usr_bot_me.username
 
-        # Start background tasks
+         # Start background tasks
         asyncio.create_task(reset_daily_counts())  # Reset daily counts every 24 hours
         asyncio.create_task(clean_old_verifications())  # Clean old verifications every hour
 
-        # web-response
+        #web-response
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
@@ -79,3 +79,5 @@ class Bot(Client):
     async def stop(self, *args):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")
+
+       
