@@ -31,21 +31,45 @@ from config import (
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
-from database.database import add_user, del_user, full_userbase, present_user , reset_daily_counts , clean_old_verifications , db_verify_status , user_data
+from database.database import add_user, del_user, full_userbase, present_user 
 from shortzy import Shortzy
+
+async def count_verified_users_24hr_and_today():
+    now = time.time()
+    start_of_today = time.mktime(datetime.date.today().timetuple())
+
+    # Get the count of users who verified in the last 24 hours
+    count_24hr = await db.users.count_documents({
+        'verified_time': {'$gte': now - 86400},  # Last 24 hours
+        'is_verified': True
+    })
+
+    # Get the count of users who verified today
+    count_today = await db.users.count_documents({
+        'verified_time': {'$gte': start_of_today},
+        'is_verified': True
+    })
+
+    return count_24hr, count_today
+
+async def get_token_verification_stats():
+    today_date = datetime.datetime.utcnow().date()
+    yesterday_date = today_date - datetime.timedelta(days=1)
+
+    # Count the verifications from yesterday and today
+    verifications_today = await db.count_documents({'verified_date': today_date})
+    verifications_last_24_hours = await db.count_documents({'verified_time': {'$gte': time.time() - 86400}})
+
+    return verifications_today, verifications_last_24_hours
 
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     id = message.from_user.id
-    owner_id = ADMINS  # Fetch the owner's ID from config
+    owner_id = ADMINS  # Fetch the owner's ID from config 
 
-    # Check if the user is the owner
     if id == owner_id:
-        # Owner-specific actions
-        # You can add any additional actions specific to the owner here
         await message.reply("You are the owner! Additional actions can be added here.")
-
     else:
         if not await present_user(id):
             try:
@@ -147,17 +171,25 @@ async def start_command(client: Client, message: Message):
         else:
             verify_status = await get_verify_status(id)
             if IS_VERIFY and not verify_status['is_verified']:
-                short_url = f"adrinolinks.in"
-                # TUT_VID = f"https://t.me/ultroid_official/18"
                 token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
                 await update_verify_status(id, verify_token=token, link="")
-                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API,f'https://telegram.dog/{client.username}?start=verify_{token}')
+                link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
                 btn = [
                     [InlineKeyboardButton("Click here", url=link)],
                     [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
                 ]
                 await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
 
+
+@Bot.on_message(filters.command('tokens') & filters.private & filters.user(ADMINS))
+async def tokens_command(client: Client, message: Message):
+    verifications_today, verifications_last_24_hours = await get_token_verification_stats()
+
+    await message.reply_text(
+        f"Token Verification Stats:\n\n"
+        f"Users verified using token today: {verifications_today}\n"
+        f"Users verified in the last 24 hours: {verifications_last_24_hours}"
+    )
 
     
         
@@ -205,41 +237,7 @@ async def not_joined(client: Client, message: Message):
         disable_web_page_preview = True
     )
 
-@Bot.on_message(filters.command('count') & filters.private)
-async def stats_command(client: Bot, message: Message):
-    try:
-        # Initialize counters
-        total_verifications = 0
-        today_verifications = 0
-        last_24_hours_verifications = 0
 
-        # Fetch all users
-        users = await full_userbase()
-
-        if not users:
-            await message.reply("No users found.")
-            return
-
-        for user_id in users:
-            user_doc = await user_data.find_one({'_id': user_id})
-            if user_doc:
-                counts = user_doc.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
-
-                # Accumulate counts
-                total_verifications += counts['total']
-                today_verifications += counts['today']
-                last_24_hours_verifications += counts['last_24_hours']
-
-        # Reply with the aggregated stats
-        await message.reply(
-            f"Verification Stats for All Users:\n"
-            f"Total Verifications: {total_verifications}\n"
-            f"Today's Verifications: {today_verifications}\n"
-            f"Last 24 Hours Verifications: {last_24_hours_verifications}",
-            quote=True
-        )
-    except Exception as e:
-        await message.reply(f"An error occurred: {e}")
 
 
 
