@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
 
@@ -44,13 +44,12 @@ async def count_verified_users_24hr_and_today():
     return count_24hr, count_today
 
 async def get_token_verification_stats():
-    today_date = datetime.datetime.utcnow().date()
-    yesterday_date = today_date - datetime.timedelta(days=1)
+    today_date = datetime.utcnow().date()
+    last_24_hours = datetime.utcnow() - timedelta(hours=24)
 
-    # Count the verifications from yesterday and today
-    verifications_today = await database.count_documents({'verified_date': today_date})
-    verifications_last_24_hours = await database.count_documents({'verified_time': {'$gte': time.time() - 86400}})
-
+    verifications_today = await user_data.count_documents({'verified_date': today_date})
+    verifications_last_24_hours = await user_data.count_documents({'verified_date': {'$gte': last_24_hours}})
+    
     return verifications_today, verifications_last_24_hours
 
 
