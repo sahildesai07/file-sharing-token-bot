@@ -25,6 +25,8 @@ from config import (
     SHORTLINK_URL,
     DISABLE_CHANNEL_BUTTON,
     PROTECT_CONTENT,
+    DB_URI,
+    DB_NAME,
     TUT_VID,
     OWNER_ID,
 )
@@ -32,9 +34,12 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user , reset_daily_counts , clean_old_verifications , db_verify_status , user_data
 from shortzy import Shortzy
 
+import motor.motor_asyncio
 
+dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
+database = dbclient[DB_NAME]
 
-
+user_data = database['users']
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
