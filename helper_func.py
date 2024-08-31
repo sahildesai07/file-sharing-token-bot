@@ -98,39 +98,19 @@ async def get_verify_status(user_id):
     verify = await db_verify_status(user_id)
     return verify
 
-async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link=""):
-    current = await db_verify_status(user_id)
-    
-    # Ensure 'verification_counts' is initialized
-    if 'verification_counts' not in current:
-        current['verification_counts'] = {
-            'total': 0,
-            'last_24_hours': 0,
-            'today': 0
-        }
-
-    # Update verification status
-    current['verify_token'] = verify_token
-    current['is_verified'] = is_verified
-    current['verified_time'] = verified_time
-    current['link'] = link
-    
-    # If the user is verified, update verification counts
-    if is_verified:
-        current['verification_counts']['total'] += 1
-        
-        current_time = time.time()
-        current['last_verification'] = current_time
-        
-        # Check if the verification is within today
-        if time.strftime('%Y-%m-%d', time.localtime(verified_time)) == time.strftime('%Y-%m-%d', time.localtime()):
-            current['verification_counts']['today'] += 1
-        
-        # Check if the verification is within the last 24 hours
-        if current_time - current['last_verification'] <= 86400:
-            current['verification_counts']['last_24_hours'] += 1
-    
-    await db_update_verify_status(user_id, current)
+async def update_verify_status(user_id, is_verified=None, verify_token=None, verified_time=None, link=None):
+    # Update the user's verification status and time
+    update_fields = {}
+    if is_verified is not None:
+        update_fields['is_verified'] = is_verified
+    if verify_token is not None:
+        update_fields['verify_token'] = verify_token
+    if verified_time is not None:
+        update_fields['verified_time'] = verified_time
+    if link is not None:
+        update_fields['link'] = link
+    update_fields['verified_date'] = datetime.datetime.utcnow().date()  # Track the date of verification
+    await db.update_one({'user_id': user_id}, {'$set': update_fields}, upsert=True)
 
 
 
