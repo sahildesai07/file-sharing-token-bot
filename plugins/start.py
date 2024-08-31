@@ -142,7 +142,7 @@ async def start_command(client: Client, message: Message):
 
 
 @Bot.on_message(filters.command('tokens') & filters.private )
-async def tokens_command(client: Client, message: Message):
+async def tokens_command(client: Bot, message: Message):
     verifications_today, verifications_last_24_hours = await get_token_verification_stats()
     await message.reply_text(
         f"Token Verification Stats:\n\n"
@@ -197,11 +197,6 @@ async def not_joined(client: Client, message: Message):
     )
 
 
-
-
-
-
-"""
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
 async def get_users(client: Bot, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
@@ -216,7 +211,7 @@ async def users_command(client: Client, message: Message):
         f"User Statistics:\n\n"
         f"Users verified in the last 24 hours: {count_24hr}\n"
         f"Users verified today: {count_today}"
-    )
+    ) """
     
 @Bot.on_message(filters.private & filters.command('broadcast') & filters.user(ADMINS))
 async def send_text(client: Bot, message: Message):
