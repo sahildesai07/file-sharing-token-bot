@@ -1,4 +1,6 @@
-
+# https://www.youtube.com/channel/UC7tAa4hho37iNv731_6RIOg
+import asyncio
+import time
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
 
@@ -31,6 +33,25 @@ def new_user(id):
         'last_verification': 0  # To store the timestamp of the last verification
     }
 
+async def reset_daily_counts():
+    while True:
+        await asyncio.sleep(86400)  # Sleep for 24 hours
+        await user_data.update_many({}, {'$set': {'verification_counts.today': 0}})
+        
+async def clean_old_verifications():
+    while True:
+        current_time = time.time()
+        users = await full_userbase()  # Assuming you have a function to get all users
+        for user_id in users:
+            user_data = await db_verify_status(user_id)
+            # Provide a default if 'verification_counts' is missing
+            verification_counts = user_data.get('verification_counts', {'last_24_hours': 0, 'today': 0})
+            last_verification = user_data.get('last_verification', 0)
+            if verification_counts['last_24_hours'] > 0 and current_time - last_verification > 86400:
+                verification_counts['last_24_hours'] -= 1
+                user_data['verification_counts'] = verification_counts
+                await db_update_verify_status(user_id, user_data)
+        await asyncio.sleep(3600)  # Run every hour
 
 async def present_user(user_id: int):
     found = await user_data.find_one({'_id': user_id})
