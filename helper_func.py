@@ -101,6 +101,14 @@ async def get_verify_status(user_id):
 async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link=""):
     current = await db_verify_status(user_id)
     
+    # Ensure 'verification_counts' is initialized
+    if 'verification_counts' not in current:
+        current['verification_counts'] = {
+            'total': 0,
+            'last_24_hours': 0,
+            'today': 0
+        }
+
     # Update verification status
     current['verify_token'] = verify_token
     current['is_verified'] = is_verified
@@ -123,6 +131,7 @@ async def update_verify_status(user_id, verify_token="", is_verified=False, veri
             current['verification_counts']['last_24_hours'] += 1
     
     await db_update_verify_status(user_id, current)
+
 
 
 async def get_shortlink(url, api, link):
