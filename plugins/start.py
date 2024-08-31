@@ -34,12 +34,6 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user , reset_daily_counts , clean_old_verifications , db_verify_status , user_data
 from shortzy import Shortzy
 
-import motor.motor_asyncio
-
-dbclient = motor.motor_asyncio.AsyncIOMotorClient(DB_URI)
-database = dbclient[DB_NAME]
-
-user_data = database['users']
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
@@ -222,9 +216,9 @@ async def stats_command(client: Bot, message: Message):
     users = await full_userbase()
 
     for user_id in users:
-        user_data = await user_data.find_one({'_id': user_id})
-        if user_data:
-            counts = user_data.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
+        user_doc = await user_data.find_one({'_id': user_id})  # Renamed from `user_data` to `user_doc`
+        if user_doc:
+            counts = user_doc.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
 
             # Accumulate counts
             total_verifications += counts['total']
@@ -239,6 +233,7 @@ async def stats_command(client: Bot, message: Message):
         f"Last 24 Hours Verifications: {last_24_hours_verifications}",
         quote=True
     )
+
 
 
 
