@@ -14,7 +14,7 @@ from shortzy import Shortzy
 import requests
 import time
 from datetime import datetime
-from database.database import user_data, db_verify_status, db_update_verify_status
+from database.database import users_collection, db_verify_status, db_update_verify_status
 
 #logger = logging.getLogger(__name__)
 #logger.setLevel(logging.INFO)
