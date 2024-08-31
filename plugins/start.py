@@ -39,18 +39,21 @@ async def get_verification_count(user_id):
     return 0
 
 @Bot.on_message(filters.command('verify_count') & filters.private)
-async def verify_count_command(client: Bot, message: Message):
+async def verify_count_command(client: Client, message: Message):
     user_id = message.from_user.id
-    count = await get_verification_count(user_id)
-    await message.reply(f"You have verified your token {count} times.", quote=True)
+    verify_status = await db_verify_status(user_id)
+    verify_count = verify_status.get('verify_count', 0)  # Ensure 'verify_count' is managed
+    await message.reply(f"You have verified your token {verify_count} times.", quote=True)
+
 
 @Bot.on_message(filters.command('verify_stats') & filters.private & filters.user(ADMINS))
-async def verify_stats_command(client: Bot, message: Message):
+async def verify_stats_command(client: Client, message: Message):
     verified_users_count = await count_verified_users()
     await message.reply(
         f"Total number of users who have verified their tokens: {verified_users_count}",
         quote=True
     )
+
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
