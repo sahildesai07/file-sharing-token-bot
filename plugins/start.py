@@ -205,34 +205,42 @@ async def not_joined(client: Client, message: Message):
         disable_web_page_preview = True
     )
 
-@Bot.on_message(filters.command('count') & filters.private & subscribed)
+@Bot.on_message(filters.command('count') & filters.private)
 async def stats_command(client: Bot, message: Message):
-    # Initialize counters
-    total_verifications = 0
-    today_verifications = 0
-    last_24_hours_verifications = 0
+    try:
+        # Initialize counters
+        total_verifications = 0
+        today_verifications = 0
+        last_24_hours_verifications = 0
 
-    # Fetch all users
-    users = await full_userbase()
+        # Fetch all users
+        users = await full_userbase()
 
-    for user_id in users:
-        user_doc = await user_data.find_one({'_id': user_id})  # Renamed from `user_data` to `user_doc`
-        if user_doc:
-            counts = user_doc.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
+        if not users:
+            await message.reply("No users found.")
+            return
 
-            # Accumulate counts
-            total_verifications += counts['total']
-            today_verifications += counts['today']
-            last_24_hours_verifications += counts['last_24_hours']
+        for user_id in users:
+            user_doc = await user_data.find_one({'_id': user_id})
+            if user_doc:
+                counts = user_doc.get('verification_counts', {'total': 0, 'today': 0, 'last_24_hours': 0})
 
-    # Reply with the aggregated stats
-    await message.reply(
-        f"Verification Stats for All Users:\n"
-        f"Total Verifications: {total_verifications}\n"
-        f"Today's Verifications: {today_verifications}\n"
-        f"Last 24 Hours Verifications: {last_24_hours_verifications}",
-        quote=True
-    )
+                # Accumulate counts
+                total_verifications += counts['total']
+                today_verifications += counts['today']
+                last_24_hours_verifications += counts['last_24_hours']
+
+        # Reply with the aggregated stats
+        await message.reply(
+            f"Verification Stats for All Users:\n"
+            f"Total Verifications: {total_verifications}\n"
+            f"Today's Verifications: {today_verifications}\n"
+            f"Last 24 Hours Verifications: {last_24_hours_verifications}",
+            quote=True
+        )
+    except Exception as e:
+        await message.reply(f"An error occurred: {e}")
+
 
 
 
