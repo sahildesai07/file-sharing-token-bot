@@ -144,7 +144,7 @@ async def start_command(client: Client, message):
 async def count_command(client: Client, message):
     now = datetime.now()
     today = now.strftime("%Y-%m-%d")
-    data = users_data.find_one({"date": today})
+    data = user_data.find_one({"date": today})
 
     if data:
         daily_count = data.get("daily_verified_count", 0)
