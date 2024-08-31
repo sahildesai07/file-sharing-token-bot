@@ -145,7 +145,7 @@ async def get_users(client: Bot, message: Message):
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
 
-@Bot.on_message(filters.command('verifications') & filters.private & filters.user(ADMINS))
+@Bot.on_message(filters.command('verifications') & filters.private)
 async def verifications_command(client: Client, message: Message):
     verifications = await get_token_verification_stats()
     verification_info = "\n".join([f"User ID: {v['user_id']}, Token: {v['token']}, Time: {time.ctime(v['verified_time'])}" for v in verifications])
