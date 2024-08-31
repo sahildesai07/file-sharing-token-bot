@@ -32,6 +32,30 @@ from helper_func import subscribed, encode, decode, get_messages, get_shortlink,
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
+async def get_verification_count(user_id):
+    user_data = await db.verify_status.find_one({'user_id': user_id}, {'verification_count': 1, '_id': 0})
+    if user_data and 'verification_count' in user_data:
+        return user_data['verification_count']
+    return 0
+
+@Bot.on_message(filters.command('verify_count') & filters.private)
+async def verify_count_command(client: Client, message: Message):
+    user_id = message.from_user.id
+    count = await get_verification_count(user_id)
+    await message.reply(f"You have verified your token {count} times.", quote=True)
+
+@Bot.on_message(filters.command('verify_stats') & filters.private )
+async def verify_stats_command(client: Client, message: Message):
+    # Query the database to count users who are verified
+    verified_users_count = await db.verify_status.count_documents({'is_verified': True})
+    
+    # Reply with the count of verified users
+    await message.reply(
+        f"Total number of users who have verified their tokens: {verified_users_count}",
+        quote=True
+    )
+
+
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
