@@ -100,10 +100,28 @@ async def get_verify_status(user_id):
 
 async def update_verify_status(user_id, verify_token="", is_verified=False, verified_time=0, link=""):
     current = await db_verify_status(user_id)
+    
+    # Update verification status
     current['verify_token'] = verify_token
     current['is_verified'] = is_verified
     current['verified_time'] = verified_time
     current['link'] = link
+    
+    # If the user is verified, update verification counts
+    if is_verified:
+        current['verification_counts']['total'] += 1
+        
+        current_time = time.time()
+        current['last_verification'] = current_time
+        
+        # Check if the verification is within today
+        if time.strftime('%Y-%m-%d', time.localtime(verified_time)) == time.strftime('%Y-%m-%d', time.localtime()):
+            current['verification_counts']['today'] += 1
+        
+        # Check if the verification is within the last 24 hours
+        if current_time - current['last_verification'] <= 86400:
+            current['verification_counts']['last_24_hours'] += 1
+    
     await db_update_verify_status(user_id, current)
 
 
