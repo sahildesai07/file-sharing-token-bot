@@ -31,7 +31,7 @@ from config import (
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
-from database.database import   add_user, del_user, full_userbase, present_user
+from database.database import   add_user, del_user, full_userbase, present_user ,reset_24h_count , increment_verification_count 
 from shortzy import Shortzy
 
 """add time in seconds for waiting before delete 
@@ -81,12 +81,13 @@ async def reset_24h_count():
         {"$set": {"last_24h_verified_count": 0}}
     )
 """
+
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message):
     user_id = message.from_user.id
 
     # Fetch the user's verification status
-    verify_status = await get_verify_status(user_id)
+    verify_status = await db_verify_status(user_id)
 
     # If the user is verified, show a welcome message
     if verify_status['is_verified']:
@@ -125,7 +126,7 @@ async def start_command(client: Client, message):
         if verify_status['verify_token'] != token:
             return await message.reply("Your token is invalid or Expired. Try again by clicking /start")
         await update_verify_status(user_id, is_verified=True, verified_time=time.time())
-        
+
         # Increment verification count
         await increment_verification_count()
 
@@ -153,8 +154,26 @@ async def count_command(client: Client, message):
         last_24h_count = 0
 
     await message.reply(f"Today's Verified Users: {daily_count}\nLast 24 Hours Verified Users: {last_24h_count}")
- 
+"""
 
+
+
+@Client.on_message(filters.command('count') & filters.private)
+async def count_command(client: Client, message):
+    now = datetime.now()
+    today = now.strftime("%Y-%m-%d")
+    data = users_collection.find_one({"date": today})
+
+    if data:
+        daily_count = data.get("daily_verified_count", 0)
+        last_24h_count = data.get("last_24h_verified_count", 0)
+    else:
+        daily_count = 0
+        last_24h_count = 0
+
+    await message.reply(f"Today's Verified Users: {daily_count}\nLast 24 Hours Verified Users: {last_24h_count}")
+ 
+"""
 
 
 #=====================================================================================##
