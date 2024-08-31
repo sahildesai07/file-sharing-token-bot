@@ -31,13 +31,13 @@ async def count_verified_users_24hr_and_today():
     start_of_today = time.mktime(datetime.date.today().timetuple())
 
     # Get the count of users who verified in the last 24 hours
-    count_24hr = await database.count_documents({
+    count_24hr = await user_data.count_documents({
         'verified_time': {'$gte': now - 86400},  # Last 24 hours
         'is_verified': True
     })
 
     # Get the count of users who verified today
-    count_today = await database.count_documents({
+    count_today = await user_data.count_documents({
         'verified_time': {'$gte': start_of_today},
         'is_verified': True
     })
