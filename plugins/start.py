@@ -38,21 +38,22 @@ from shortzy import Shortzy
 1 min = 60, 2 min = 60 × 2 = 120, 5 min = 60 × 5 = 300"""
 # SECONDS = int(os.getenv("SECONDS", "1200"))
 
-from pymongo import MongoClient
+#from pymongo import MongoClient
 from pytz import timezone
 from datetime import datetime, timedelta
-
+"""
 # MongoDB setup
 client = MongoClient(DB_URI)
 db = client[DB_NAME]
 verifications_collection = db['verifications']
 users_collection = db["users"]
+"""
 INDIA_TZ = timezone('Asia/Kolkata')
 
 # Constants
 IS_VERIFY = True
 VERIFY_EXPIRE = 86400  # 24 hours in seconds
-
+"""
 async def get_verify_status(user_id):
     user = users_collection.find_one({"user_id": user_id})
     return user if user else {"is_verified": False, "verified_time": 0, "verify_token": "", "link": ""}
@@ -79,7 +80,7 @@ async def reset_24h_count():
         {},
         {"$set": {"last_24h_verified_count": 0}}
     )
-
+"""
 @Client.on_message(filters.command('start') & filters.private)
 async def start_command(client: Client, message):
     user_id = message.from_user.id
@@ -124,7 +125,7 @@ async def start_command(client: Client, message):
         if verify_status['verify_token'] != token:
             return await message.reply("Your token is invalid or Expired. Try again by clicking /start")
         await update_verify_status(user_id, is_verified=True, verified_time=time.time())
-
+        
         # Increment verification count
         await increment_verification_count()
 
