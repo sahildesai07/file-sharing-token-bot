@@ -30,13 +30,13 @@ async def count_verified_users_24hr_and_today():
     start_of_today = time.mktime(datetime.date.today().timetuple())
 
     # Get the count of users who verified in the last 24 hours
-    count_24hr = await db.count_documents({
+    count_24hr = await database.count_documents({
         'verified_time': {'$gte': now - 86400},  # Last 24 hours
         'is_verified': True
     })
 
     # Get the count of users who verified today
-    count_today = await db.count_documents({
+    count_today = await database.count_documents({
         'verified_time': {'$gte': start_of_today},
         'is_verified': True
     })
@@ -48,8 +48,8 @@ async def get_token_verification_stats():
     yesterday_date = today_date - datetime.timedelta(days=1)
 
     # Count the verifications from yesterday and today
-    verifications_today = await db.count_documents({'verified_date': today_date})
-    verifications_last_24_hours = await db.count_documents({'verified_time': {'$gte': time.time() - 86400}})
+    verifications_today = await database.count_documents({'verified_date': today_date})
+    verifications_last_24_hours = await database.count_documents({'verified_time': {'$gte': time.time() - 86400}})
 
     return verifications_today, verifications_last_24_hours
 
