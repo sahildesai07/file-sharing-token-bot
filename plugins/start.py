@@ -31,123 +31,84 @@ from config import (
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
-from database.database import add_user, del_user, full_userbase, present_user 
+from database.database import add_user, del_user, full_userbase, present_user , count_verified_users_24hr_and_today , get_token_verification_stats
 from shortzy import Shortzy
 
-async def count_verified_users_24hr_and_today():
-    now = time.time()
-    start_of_today = time.mktime(datetime.date.today().timetuple())
-
-    # Get the count of users who verified in the last 24 hours
-    count_24hr = await db.users.count_documents({
-        'verified_time': {'$gte': now - 86400},  # Last 24 hours
-        'is_verified': True
-    })
-
-    # Get the count of users who verified today
-    count_today = await db.users.count_documents({
-        'verified_time': {'$gte': start_of_today},
-        'is_verified': True
-    })
-
-    return count_24hr, count_today
-
-async def get_token_verification_stats():
-    today_date = datetime.datetime.utcnow().date()
-    yesterday_date = today_date - datetime.timedelta(days=1)
-
-    # Count the verifications from yesterday and today
-    verifications_today = await db.count_documents({'verified_date': today_date})
-    verifications_last_24_hours = await db.count_documents({'verified_time': {'$gte': time.time() - 86400}})
-
-    return verifications_today, verifications_last_24_hours
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
 
 
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
-    id = message.from_user.id
+    user_id = message.from_user.id
     owner_id = ADMINS  # Fetch the owner's ID from config 
 
-    if id == owner_id:
+    if user_id == owner_id:
         await message.reply("You are the owner! Additional actions can be added here.")
     else:
-        if not await present_user(id):
+        if not await present_user(user_id):
             try:
-                await add_user(id)
-            except:
+                await add_user(user_id)
+            except Exception as e:
+                logging.error(f"Error adding user {user_id}: {e}")
                 pass
 
-        verify_status = await get_verify_status(id)
+        verify_status = await get_verify_status(user_id)
         if verify_status['is_verified'] and VERIFY_EXPIRE < (time.time() - verify_status['verified_time']):
-            await update_verify_status(id, is_verified=False)
+            await update_verify_status(user_id, is_verified=False)
 
         if "verify_" in message.text:
             _, token = message.text.split("_", 1)
             if verify_status['verify_token'] != token:
-                return await message.reply("Your token is invalid or Expired. Try again by clicking /start")
-            await update_verify_status(id, is_verified=True, verified_time=time.time())
-            if verify_status["link"] == "":
-                reply_markup = None
-            await message.reply(f"Your token successfully verified and valid for: 24 Hour", reply_markup=reply_markup, protect_content=False, quote=True)
+                return await message.reply("Your token is invalid or expired. Try again by clicking /start")
+            await update_verify_status(user_id, is_verified=True, verified_time=time.time())
+            reply_markup = None if verify_status["link"] == "" else None  # Clarify if link should be used for the button
+            await message.reply(f"Your token was successfully verified and is valid for 24 hours", reply_markup=reply_markup, protect_content=False, quote=True)
 
         elif len(message.text) > 7 and verify_status['is_verified']:
             try:
                 base64_string = message.text.split(" ", 1)[1]
-            except:
+            except IndexError:
                 return
-            _string = await decode(base64_string)
-            argument = _string.split("-")
-            if len(argument) == 3:
-                try:
-                    start = int(int(argument[1]) / abs(client.db_channel.id))
-                    end = int(int(argument[2]) / abs(client.db_channel.id))
-                except:
-                    return
-                if start <= end:
-                    ids = range(start, end+1)
-                else:
-                    ids = []
-                    i = start
-                    while True:
-                        ids.append(i)
-                        i -= 1
-                        if i < end:
-                            break
-            elif len(argument) == 2:
-                try:
-                    ids = [int(int(argument[1]) / abs(client.db_channel.id))]
-                except:
-                    return
+            decoded_string = await decode(base64_string)
+            arguments = decoded_string.split("-")
+            ids = []
+
+            try:
+                if len(arguments) == 3:
+                    start = int(arguments[1]) // abs(client.db_channel.id)
+                    end = int(arguments[2]) // abs(client.db_channel.id)
+                    ids = range(start, end + 1) if start <= end else list(range(start, end - 1, -1))
+                elif len(arguments) == 2:
+                    ids = [int(arguments[1]) // abs(client.db_channel.id)]
+            except Exception as e:
+                logging.error(f"Error parsing arguments: {e}")
+                return
+
             temp_msg = await message.reply("Please wait...")
             try:
                 messages = await get_messages(client, ids)
-            except:
+            except Exception as e:
                 await message.reply_text("Something went wrong..!")
+                logging.error(f"Error fetching messages: {e}")
                 return
             await temp_msg.delete()
-            
-            snt_msgs = []
-            
-            for msg in messages:
-                if bool(CUSTOM_CAPTION) & bool(msg.document):
-                    caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name)
-                else:
-                    caption = "" if not msg.caption else msg.caption.html
 
-                if DISABLE_CHANNEL_BUTTON:
-                    reply_markup = msg.reply_markup
-                else:
-                    reply_markup = None
+            sent_msgs = []
+            for msg in messages:
+                caption = CUSTOM_CAPTION.format(previouscaption="" if not msg.caption else msg.caption.html, filename=msg.document.file_name) if CUSTOM_CAPTION and msg.document else "" if not msg.caption else msg.caption.html
+                reply_markup = msg.reply_markup if not DISABLE_CHANNEL_BUTTON else None
 
                 try:
-                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    sent_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
                     await asyncio.sleep(0.5)
-                    snt_msgs.append(snt_msg)
+                    sent_msgs.append(sent_msg)
                 except FloodWait as e:
                     await asyncio.sleep(e.x)
-                    snt_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
-                    snt_msgs.append(snt_msg)
-                except:
+                    sent_msg = await msg.copy(chat_id=message.from_user.id, caption=caption, parse_mode=ParseMode.HTML, reply_markup=reply_markup, protect_content=PROTECT_CONTENT)
+                    sent_msgs.append(sent_msg)
+                except Exception as e:
+                    logging.error(f"Error copying message: {e}")
                     pass
 
         elif verify_status['is_verified']:
@@ -159,7 +120,7 @@ async def start_command(client: Client, message: Message):
                 text=START_MSG.format(
                     first=message.from_user.first_name,
                     last=message.from_user.last_name,
-                    username=None if not message.from_user.username else '@' + message.from_user.username,
+                    username='@' + message.from_user.username if message.from_user.username else None,
                     mention=message.from_user.mention,
                     id=message.from_user.id
                 ),
@@ -169,22 +130,20 @@ async def start_command(client: Client, message: Message):
             )
 
         else:
-            verify_status = await get_verify_status(id)
             if IS_VERIFY and not verify_status['is_verified']:
                 token = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
-                await update_verify_status(id, verify_token=token, link="")
+                await update_verify_status(user_id, verify_token=token, link="")
                 link = await get_shortlink(SHORTLINK_URL, SHORTLINK_API, f'https://telegram.dog/{client.username}?start=verify_{token}')
                 btn = [
                     [InlineKeyboardButton("Click here", url=link)],
                     [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
                 ]
-                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 Hour after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+                await message.reply(f"Your Ads token is expired, refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
 
 
-@Bot.on_message(filters.command('tokens') & filters.private & filters.user(ADMINS))
+@Bot.on_message(filters.command('tokens') & filters.private )
 async def tokens_command(client: Client, message: Message):
     verifications_today, verifications_last_24_hours = await get_token_verification_stats()
-
     await message.reply_text(
         f"Token Verification Stats:\n\n"
         f"Users verified using token today: {verifications_today}\n"
