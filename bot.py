@@ -11,17 +11,17 @@ from datetime import datetime
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
 import pyrogram.utils
 
-from pymongo import MongoClient
-
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT, DB_URI
+from pymongo import MongoClient
+pyrogram.utils.MIN_CHAT_ID = -999999999999
+pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
 
 # Initialize MongoDB client and define the tokens collection
 client = MongoClient(DB_URI)
 db = client.get_database()  # You can specify the database name if needed
 tokens_collection = db.tokens  # Replace 'tokens' with your actual collection name
 
-pyrogram.utils.MIN_CHAT_ID = -999999999999
-pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
+
 
 
 class Bot(Client):
