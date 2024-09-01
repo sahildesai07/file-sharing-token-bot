@@ -8,10 +8,9 @@ from pyrogram.enums import ParseMode
 import sys
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient  # Import the async MongoDB client
-from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
 import pyrogram.utils
 
-from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT, DB_URI ,DB_NAME
+from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT, DB_URI ,DB_NAME , ADMINS
 from pymongo import MongoClient
 pyrogram.utils.MIN_CHAT_ID = -999999999999
 pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
@@ -94,3 +93,6 @@ class Bot(Client):
     async def stop(self, *args):
         await super().stop()
         self.LOGGER(__name__).info("Bot stopped.")
+
+    async def is_admin(self, user_id):
+        return user_id in ADMINS  # Check if the user_id is in the ADMINS list
