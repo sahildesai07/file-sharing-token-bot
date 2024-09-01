@@ -7,7 +7,7 @@ import random
 import re
 import string
 import time
-
+from datetime import datetime
 from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
@@ -26,31 +26,73 @@ from config import (
     DISABLE_CHANNEL_BUTTON,
     PROTECT_CONTENT,
     TUT_VID,
+    DB_URI,
+    DB_NAME,
     OWNER_ID,
 )
 from helper_func import subscribed, encode, decode, get_messages, get_shortlink, get_verify_status, update_verify_status, get_exp_time
 from database.database import add_user, del_user, full_userbase, present_user
 from shortzy import Shortzy
 
+# Import Motor for async MongoDB operations
+from motor.motor_asyncio import AsyncIOMotorClient
+
 # Logging configuration
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@Client.on_message(filters.command('v_count') & filters.private)
-async def verify_count_command(client: Bot, message: Message):
-    user_id = message.from_user.id
-    verify_status = await db_verify_status(user_id)
-    verify_count = verify_status.get('verification_count', 0)
-    await message.reply(f"You have verified your token {verify_count} times.", quote=True)
+# Initialize MongoDB Client
+mongo_client = AsyncIOMotorClient(DB_URI)
+db = mongo_client[DB_NAME]  # Replace with your database name
+tokens_collection = db['tokens']  # Collection for token counts
 
-@Client.on_message(filters.command('v_stats') & filters.private & filters.user(ADMINS))
-async def verify_stats_command(client: Bot, message: Message):
-    verified_users_count = await count_verified_users()
-    await message.reply(
-        f"Total number of users who have verified their tokens: {verified_users_count}",
-        quote=True
+WAIT_MSG = """"<b>Processing ...</b>"""
+
+REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
+
+
+# Helper Functions for Token Counting
+async def increment_token_count(user_id: int):
+    """Increments the total token count and the user's token count."""
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+    # Increment total tokens for today
+    await tokens_collection.update_one(
+        {'date': today},
+        {'$inc': {'today_tokens': 1, 'total_tokens': 1}},
+        upsert=True
+    )
+    # Increment user's token count
+    await tokens_collection.update_one(
+        {'user_id': user_id},
+        {'$inc': {'user_tokens': 1}},
+        upsert=True
     )
 
+async def get_today_token_count():
+    """Retrieves today's total token count."""
+    today = datetime.utcnow().strftime('%Y-%m-%d')
+    doc = await tokens_collection.find_one({'date': today})
+    return doc['today_tokens'] if doc and 'today_tokens' in doc else 0
+
+async def get_total_token_count():
+    """Retrieves the total token count."""
+    pipeline = [
+        {
+            '$group': {
+                '_id': None,
+                'total': {'$sum': '$total_tokens'}
+            }
+        }
+    ]
+    result = await tokens_collection.aggregate(pipeline).to_list(length=1)
+    return result[0]['total'] if result else 0
+
+async def get_user_token_count(user_id: int):
+    """Retrieves the token count for a specific user."""
+    doc = await tokens_collection.find_one({'user_id': user_id})
+    return doc['user_tokens'] if doc and 'user_tokens' in doc else 0
+
+# Modify /start Command to Include Token Counts
 @Bot.on_message(filters.command('start') & filters.private & subscribed)
 async def start_command(client: Client, message: Message):
     user_id = message.from_user.id
@@ -128,9 +170,20 @@ async def start_command(client: Client, message: Message):
                 logger.error(f"Error copying message: {e}")
 
     elif verify_status['is_verified']:
+        # Increment token count as the user has accessed the /start command
+        await increment_token_count(user_id)
+
+        # Fetch token counts
+        today_tokens = await get_today_token_count()
+        total_tokens = await get_total_token_count()
+        user_tokens = await get_user_token_count(user_id)
+
         reply_markup = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("About Me", callback_data="about"),
-              InlineKeyboardButton("Close", callback_data="close")]]
+            [
+                [InlineKeyboardButton("About Me", callback_data="about"),
+                 InlineKeyboardButton("Close", callback_data="close")],
+                [InlineKeyboardButton("Check Token Count", callback_data="check_tokens")]
+            ]
         )
         await message.reply_text(
             text=START_MSG.format(
@@ -139,9 +192,10 @@ async def start_command(client: Client, message: Message):
                 username=None if not message.from_user.username else '@' + message.from_user.username,
                 mention=message.from_user.mention,
                 id=message.from_user.id
-            ),
+            ) + f"\n\n<b>Today's Token Count:</b> {today_tokens}\n<b>Total Token Count:</b> {total_tokens}\n<b>Your Token Count:</b> {user_tokens}",
             reply_markup=reply_markup,
             disable_web_page_preview=True,
+            parse_mode=ParseMode.HTML,
             quote=True
         )
 
@@ -155,35 +209,79 @@ async def start_command(client: Client, message: Message):
                 [InlineKeyboardButton("Click here", url=link)],
                 [InlineKeyboardButton('How to use the bot', url=TUT_VID)]
             ]
-            await message.reply(f"Your Ads token is expired. Refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.", reply_markup=InlineKeyboardMarkup(btn), protect_content=False, quote=True)
+            await message.reply(
+                f"Your Ads token is expired. Refresh your token and try again.\n\nToken Timeout: {get_exp_time(VERIFY_EXPIRE)}\n\nWhat is the token?\n\nThis is an ads token. If you pass 1 ad, you can use the bot for 24 hours after passing the ad.",
+                reply_markup=InlineKeyboardMarkup(btn),
+                protect_content=False,
+                parse_mode=ParseMode.HTML,
+                quote=True
+            )
 
-    
-        
-#=====================================================================================##
+# Handle Callback Queries for Token Count
+@Bot.on_callback_query(filters.regex(r"^check_tokens$"))
+async def check_tokens_callback(client: Client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    is_admin = user_id in ADMINS
 
-WAIT_MSG = """"<b>Processing ...</b>"""
+    # Fetch token counts
+    today_tokens = await get_today_token_count()
+    total_tokens = await get_total_token_count()
+    user_tokens = await get_user_token_count(user_id)
 
-REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
+    if is_admin:
+        # For admins, optionally display more detailed stats
+        users = await full_userbase()
+        user_token_details = ""
+        for user in users[:10]:  # Limit to first 10 users for brevity
+            tokens = await get_user_token_count(user)
+            user_token_details += f"User ID: {user} - Tokens: {tokens}\n"
+        response = (
+            f"<b>🔹 Admin Token Statistics 🔹</b>\n\n"
+            f"<b>Today's Token Count:</b> {today_tokens}\n"
+            f"<b>Total Token Count:</b> {total_tokens}\n\n"
+            f"<b>Top Users:</b>\n{user_token_details}"
+        )
+    else:
+        # For regular users
+        response = (
+            f"<b>📊 Your Token Statistics 📊</b>\n\n"
+            f"<b>Today's Token Count:</b> {today_tokens}\n"
+            f"<b>Total Token Count:</b> {total_tokens}\n"
+            f"<b>Your Token Count:</b> {user_tokens}"
+        )
 
-#=====================================================================================##
+    await callback_query.answer()
+    await callback_query.message.edit_text(
+        text=response,
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Close", callback_data="close")]]
+        )
+    )
 
-    
-    
+# Existing Callback Query Handler for 'close'
+@Bot.on_callback_query(filters.regex(r"^close$"))
+async def close_callback(client: Client, callback_query: CallbackQuery):
+    await callback_query.message.delete()
+    await callback_query.answer()
+
+# Existing /start Not Joined Handler
 @Bot.on_message(filters.command('start') & filters.private)
 async def not_joined(client: Client, message: Message):
     buttons = [
         [
             InlineKeyboardButton(
                 "Join Channel",
-                url = client.invitelink)
+                url=client.invitelink
+            )
         ]
     ]
     try:
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text = 'Try Again',
-                    url = f"https://t.me/{client.username}?start={message.command[1]}"
+                    text='Try Again',
+                    url=f"https://t.me/{client.username}?start={message.command[1]}"
                 )
             ]
         )
@@ -191,26 +289,28 @@ async def not_joined(client: Client, message: Message):
         pass
 
     await message.reply(
-        text = FORCE_MSG.format(
-                first = message.from_user.first_name,
-                last = message.from_user.last_name,
-                username = None if not message.from_user.username else '@' + message.from_user.username,
-                mention = message.from_user.mention,
-                id = message.from_user.id
-            ),
-        reply_markup = InlineKeyboardMarkup(buttons),
-        quote = True,
-        disable_web_page_preview = True
+        text=FORCE_MSG.format(
+            first=message.from_user.first_name,
+            last=message.from_user.last_name,
+            username=None if not message.from_user.username else '@' + message.from_user.username,
+            mention=message.from_user.mention,
+            id=message.from_user.id
+        ),
+        reply_markup=InlineKeyboardMarkup(buttons),
+        quote=True,
+        disable_web_page_preview=True
     )
 
+# Existing /users Command for Admins
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
-async def get_users(client: Bot, message: Message):
+async def get_users(client: Client, message: Message):
     msg = await client.send_message(chat_id=message.chat.id, text=WAIT_MSG)
     users = await full_userbase()
     await msg.edit(f"{len(users)} users are using this bot")
 
+# Existing /broadcast Command for Admins
 @Bot.on_message(filters.private & filters.command('broadcast') & filters.user(ADMINS))
-async def send_text(client: Bot, message: Message):
+async def send_text(client: Client, message: Message):
     if message.reply_to_message:
         query = await full_userbase()
         broadcast_msg = message.reply_to_message
@@ -219,7 +319,7 @@ async def send_text(client: Bot, message: Message):
         blocked = 0
         deleted = 0
         unsuccessful = 0
-        
+
         pls_wait = await message.reply("<i>Broadcasting Message.. This will Take Some Time</i>")
         for chat_id in query:
             try:
@@ -239,7 +339,7 @@ async def send_text(client: Bot, message: Message):
                 unsuccessful += 1
                 pass
             total += 1
-        
+
         status = f"""<b><u>Broadcast Completed</u>
 
 Total Users: <code>{total}</code>
@@ -247,10 +347,51 @@ Successful: <code>{successful}</code>
 Blocked Users: <code>{blocked}</code>
 Deleted Accounts: <code>{deleted}</code>
 Unsuccessful: <code>{unsuccessful}</code></b>"""
-        
+
         return await pls_wait.edit(status)
 
     else:
         msg = await message.reply(REPLY_ERROR)
         await asyncio.sleep(8)
         await msg.delete()
+
+# Add a New Command /tokencount for Users and Admins
+@Bot.on_message(filters.command('tokencount') & filters.private)
+async def token_count_command(client: Client, message: Message):
+    user_id = message.from_user.id
+    is_admin = user_id in ADMINS
+
+    # Fetch token counts
+    today_tokens = await get_today_token_count()
+    total_tokens = await get_total_token_count()
+    user_tokens = await get_user_token_count(user_id)
+
+    if is_admin:
+        # For admins, optionally display more detailed stats
+        users = await full_userbase()
+        user_token_details = ""
+        for user in users[:10]:  # Limit to first 10 users for brevity
+            tokens = await get_user_token_count(user)
+            user_token_details += f"User ID: {user} - Tokens: {tokens}\n"
+        response = (
+            f"<b>🔹 Admin Token Statistics 🔹</b>\n\n"
+            f"<b>Today's Token Count:</b> {today_tokens}\n"
+            f"<b>Total Token Count:</b> {total_tokens}\n\n"
+            f"<b>Top Users:</b>\n{user_token_details}"
+        )
+    else:
+        # For regular users
+        response = (
+            f"<b>📊 Your Token Statistics 📊</b>\n\n"
+            f"<b>Today's Token Count:</b> {today_tokens}\n"
+            f"<b>Total Token Count:</b> {total_tokens}\n"
+            f"<b>Your Token Count:</b> {user_tokens}"
+        )
+
+    await message.reply_text(
+        text=response,
+        parse_mode=ParseMode.HTML,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Close", callback_data="close")]]
+        )
+    )
