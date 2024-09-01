@@ -12,7 +12,7 @@ from pyrogram import Client, filters, __version__
 from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
-
+from cbb import *
 from bot import Bot
 from config import (
     ADMINS,
@@ -46,9 +46,7 @@ mongo_client = AsyncIOMotorClient(DB_URI)
 db = mongo_client[DB_NAME]  # Replace with your database name
 tokens_collection = db['tokens']  # Collection for token counts
 
-WAIT_MSG = """"<b>Processing ...</b>"""
 
-REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
 
 
 # Helper Functions for Token Counting
@@ -170,13 +168,6 @@ async def start_command(client: Client, message: Message):
                 logger.error(f"Error copying message: {e}")
 
     elif verify_status['is_verified']:
-        # Increment token count as the user has accessed the /start command
-        await increment_token_count(user_id)
-
-        # Fetch token counts
-        today_tokens = await get_today_token_count()
-        total_tokens = await get_total_token_count()
-        user_tokens = await get_user_token_count(user_id)
 
         reply_markup = InlineKeyboardMarkup(
             [
@@ -259,11 +250,6 @@ async def check_tokens_callback(client: Client, callback_query: CallbackQuery):
         )
     )
 
-# Existing Callback Query Handler for 'close'
-@Bot.on_callback_query(filters.regex(r"^close$"))
-async def close_callback(client: Client, callback_query: CallbackQuery):
-    await callback_query.message.delete()
-    await callback_query.answer()
 
 # Existing /start Not Joined Handler
 @Bot.on_message(filters.command('start') & filters.private)
@@ -300,6 +286,10 @@ async def not_joined(client: Client, message: Message):
         quote=True,
         disable_web_page_preview=True
     )
+
+WAIT_MSG = """"<b>Processing ...</b>"""
+
+REPLY_ERROR = """<code>Use this command as a replay to any telegram message with out any spaces.</code>"""
 
 # Existing /users Command for Admins
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
