@@ -6,6 +6,7 @@ import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
 import sys
+import pytz
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorClient  # Import the async MongoDB client
 import pyrogram.utils
@@ -20,7 +21,8 @@ mongo_client = AsyncIOMotorClient(DB_URI)
 db = mongo_client[DB_NAME]  # Replace with your database name
 tokens_collection = db['tokens'] 
 
-
+# Set timezone to UTC+5:30
+tz = pytz.timezone('Asia/Kolkata')
 
 
 class Bot(Client):
@@ -40,7 +42,8 @@ class Bot(Client):
     async def start(self):
         await super().start()
         usr_bot_me = await self.get_me()
-        self.uptime = datetime.now()
+        #self.uptime = datetime.now()
+        self.uptime = datetime.now(tz=tz)
 
         if FORCE_SUB_CHANNEL:
             try:
