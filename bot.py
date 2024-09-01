@@ -11,8 +11,18 @@ from datetime import datetime
 from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT
 import pyrogram.utils
 
+from pymongo import MongoClient
+
+from config import API_HASH, APP_ID, LOGGER, TG_BOT_TOKEN, TG_BOT_WORKERS, FORCE_SUB_CHANNEL, CHANNEL_ID, PORT, DB_URI
+
+# Initialize MongoDB client and define the tokens collection
+client = MongoClient(DB_URI)
+db = client.get_database()  # You can specify the database name if needed
+tokens_collection = db.tokens  # Replace 'tokens' with your actual collection name
+
 pyrogram.utils.MIN_CHAT_ID = -999999999999
 pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
+
 
 class Bot(Client):
     def __init__(self):
@@ -46,6 +56,7 @@ class Bot(Client):
                 self.LOGGER(__name__).warning(f"Please Double check the FORCE_SUB_CHANNEL value and Make sure Bot is Admin in channel with Invite Users via Link Permission, Current Force Sub Channel Value: {FORCE_SUB_CHANNEL}")
                 self.LOGGER(__name__).info("\nBot Stopped. Join https://t.me/ultroid_official for support")
                 sys.exit()
+
         try:
             db_channel = await self.get_chat(CHANNEL_ID)
             self.db_channel = db_channel
@@ -66,11 +77,15 @@ class Bot(Client):
                                           """)
         self.username = usr_bot_me.username
 
-        
-        await tokens_collection.create_index("date")
-        await tokens_collection.create_index("user_id")
+        # Asynchronous MongoDB Index Creation with error handling
+        try:
+            await tokens_collection.create_index("date")
+            await tokens_collection.create_index("user_id")
+        except Exception as e:
+            self.LOGGER(__name__).error(f"Failed to create MongoDB indexes: {e}")
+            sys.exit("Exiting due to MongoDB index creation failure")
 
-        #web-response
+        # Web server setup
         app = web.AppRunner(await web_server())
         await app.setup()
         bind_address = "0.0.0.0"
