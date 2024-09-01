@@ -1,7 +1,7 @@
 
 from aiohttp import web
 from plugins import web_server
-
+import asyncio
 import pyromod.listen
 from pyrogram import Client
 from pyrogram.enums import ParseMode
@@ -65,6 +65,11 @@ class Bot(Client):
 ░╚════╝░░╚════╝░╚═════╝░╚══════╝
                                           """)
         self.username = usr_bot_me.username
+
+        
+        await tokens_collection.create_index("date")
+        await tokens_collection.create_index("user_id")
+
         #web-response
         app = web.AppRunner(await web_server())
         await app.setup()
