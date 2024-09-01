@@ -17,9 +17,9 @@ pyrogram.utils.MIN_CHAT_ID = -999999999999
 pyrogram.utils.MIN_CHANNEL_ID = -100999999999999
 
 # Initialize MongoDB client and define the tokens collection
-client = MongoClient(DB_URI)
-db = client.get_database()  # You can specify the database name if needed
-tokens_collection = db.tokens  # Replace 'tokens' with your actual collection name
+mongo_client = AsyncIOMotorClient(DB_URI)
+db = mongo_client[DB_NAME]  # Replace with your database name
+tokens_collection = db['tokens'] 
 
 
 
