@@ -1,9 +1,9 @@
-FROM python:3.8-slim-buster
-WORKDIR /app
+From python 3.11
 
-COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
+WORKDIR /RAHUL_FILE_STORE_BOT
 
-COPY . .
-EXPOSE 8080
-CMD python3 main.py
+COPY ./RAHUL_FILE_STORE_BOT
+
+RUN pip install -r requirements.txt
+
+CMD["python", "bot.py"]
